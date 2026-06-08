@@ -228,7 +228,7 @@ export default function Home() {
     setAuthError('')
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider as any,
-      options: { redirectTo: `${window.location.origin}/api/auth/callback` },
+      options: { redirectTo: `https://fitdiary-app.netlify.app/api/auth/callback` },
     })
     if (error) setAuthError('Ошибка входа через ' + (provider === 'google' ? 'Google' : 'ВКонтакте'))
   }
