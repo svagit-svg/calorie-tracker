@@ -1,0 +1,13 @@
+{
+  "name": "FitDiary — Дневник питания",
+  "short_name": "FitDiary",
+  "description": "Считай калории с помощью AI. Фото, голос, штрихкоды.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f97316",
+  "theme_color": "#f97316",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

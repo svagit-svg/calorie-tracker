@@ -145,6 +145,7 @@ export default function Home() {
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
   const [authSuccess, setAuthSuccess] = useState('')
+  const [showLanding, setShowLanding] = useState(true)
   const [pending, setPending] = useState<PendingMeal | null>(null)
   const [showManual, setShowManual] = useState(false)
   const [manual, setManual] = useState({ name: '', calories: '', protein: '', carbs: '', fat: '', meal_type: detectMealType() })
@@ -499,11 +500,59 @@ export default function Home() {
     </>
   )
 
+  if (!user && showLanding) return (
+    <div className="min-h-screen bg-white max-w-md mx-auto flex flex-col">
+      {/* Hero */}
+      <div className="bg-gradient-to-b from-orange-500 to-orange-400 px-6 pt-16 pb-12 text-white text-center">
+        <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 text-xs font-medium mb-6">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"></span>
+          Beta
+        </div>
+        <div className="text-6xl mb-4">🥗</div>
+        <h1 className="text-3xl font-bold mb-2">FitDiary</h1>
+        <p className="text-orange-100 text-lg">Дневник питания с AI</p>
+      </div>
+
+      {/* Features */}
+      <div className="flex-1 px-6 py-8 space-y-4">
+        {[
+          { emoji: '📸', title: 'Фото еды', desc: 'Сфотографируй блюдо — AI посчитает калории автоматически' },
+          { emoji: '🎤', title: 'Голосовой ввод', desc: 'Скажи что съел — распознаём речь и добавляем в дневник' },
+          { emoji: '📊', title: 'Статистика', desc: 'Графики БЖУ, динамика веса, стрики и достижения' },
+          { emoji: '🤖', title: 'AI нутрициолог', desc: 'Персональные советы на основе твоего рациона' },
+        ].map(f => (
+          <div key={f.title} className="flex items-start gap-4 p-4 bg-gray-50 rounded-2xl">
+            <span className="text-2xl">{f.emoji}</span>
+            <div>
+              <p className="font-semibold text-gray-900">{f.title}</p>
+              <p className="text-sm text-gray-500 mt-0.5">{f.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div className="px-6 pb-10 space-y-3">
+        <button onClick={() => setShowLanding(false)}
+          className="w-full bg-orange-500 text-white rounded-2xl py-4 font-semibold text-lg">
+          Начать бесплатно
+        </button>
+        <button onClick={() => setShowLanding(false)}
+          className="w-full text-gray-400 text-sm py-2">
+          Уже есть аккаунт? Войти
+        </button>
+      </div>
+    </div>
+  )
+
   if (!user) return (
     <div className="min-h-screen bg-gray-50 max-w-md mx-auto flex flex-col justify-center px-6">
       <div className="text-center mb-8">
         <div className="text-5xl mb-3">🥗</div>
-        <h1 className="text-2xl font-bold text-gray-900">Дневник питания</h1>
+        <div className="flex items-center justify-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900">FitDiary</h1>
+          <span className="bg-orange-100 text-orange-600 text-xs font-medium px-2 py-0.5 rounded-full">Beta</span>
+        </div>
         <p className="text-gray-400 mt-1">Считай калории с помощью AI</p>
       </div>
       <div className="bg-white rounded-2xl p-6 shadow-sm space-y-3">
@@ -528,6 +577,10 @@ export default function Home() {
           Google
         </button>
 
+        <button onClick={() => setShowLanding(true)}
+          className="w-full text-gray-400 text-sm py-1">
+          ← Назад
+        </button>
       </div>
     </div>
   )
