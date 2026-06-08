@@ -467,6 +467,9 @@ export default function Home() {
   if (showChat && user) return (
     <ChatScreen
       onBack={() => setShowChat(false)}
+      isPro={isPro}
+      userId={user.id}
+      onShowPaywall={() => { setShowChat(false); setShowPaywall(true) }}
       context={{
         dailyGoal,
         totalCalories,
