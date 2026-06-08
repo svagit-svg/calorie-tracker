@@ -77,9 +77,11 @@ function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitRea
           <div className="grid grid-cols-2 gap-2 mb-5">
             {[
               ['📷', 'Безлимитные фото'],
-              ['🤖', 'AI распознавание'],
-              ['📊', 'Детальная статистика'],
-              ['🏆', 'Все ачивки'],
+              ['🤖', 'AI чат без ограничений'],
+              ['📊', 'Расширенная статистика'],
+              ['📄', 'Экспорт в PDF'],
+              ['🍽️', 'Анализ рациона'],
+              ['⚡', 'Ранний доступ к функциям'],
             ].map(([icon, text]) => (
               <div key={text} className="flex items-center gap-2 bg-orange-50 rounded-xl px-3 py-2">
                 <span>{icon}</span>
@@ -582,7 +584,7 @@ export default function Home() {
       {/* PRO highlight */}
       <div className="mx-6 mt-3 bg-orange-50 rounded-2xl p-4 border border-orange-100">
         <p className="font-semibold text-orange-800 text-sm">👑 PRO от 99 ₽/нед</p>
-        <p className="text-orange-700 text-xs mt-1">Безлимитное распознавание фото и приоритетная поддержка</p>
+        <p className="text-orange-700 text-xs mt-1">Безлимитные фото · AI чат · Экспорт в PDF · Анализ рациона</p>
       </div>
 
       {/* CTA */}
