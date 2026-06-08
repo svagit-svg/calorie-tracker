@@ -501,46 +501,98 @@ export default function Home() {
   )
 
   if (!user && showLanding) return (
-    <div className="min-h-screen bg-white max-w-md mx-auto flex flex-col">
+    <div className="bg-white max-w-md mx-auto flex flex-col">
       {/* Hero */}
-      <div className="bg-gradient-to-b from-orange-500 to-orange-400 px-6 pt-16 pb-12 text-white text-center">
-        <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 text-xs font-medium mb-6">
+      <div className="bg-orange-500 px-6 pt-14 pb-10 text-white text-center">
+        <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 text-xs font-medium mb-5">
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"></span>
           Beta
         </div>
-        <div className="text-6xl mb-4">🥗</div>
-        <h1 className="text-3xl font-bold mb-2">FitDiary</h1>
-        <p className="text-orange-100 text-lg">Дневник питания с AI</p>
+        <div className="flex justify-center mb-3">
+          <img src="/icon.svg" alt="FitDiary" className="w-20 h-20 rounded-2xl shadow-lg" />
+        </div>
+        <h1 className="text-3xl font-bold mb-1">FitDiary</h1>
+        <p className="text-orange-100 text-base">Считай калории с помощью AI</p>
       </div>
 
-      {/* Features */}
-      <div className="flex-1 px-6 py-8 space-y-4">
+      {/* Stats bar */}
+      <div className="bg-orange-50 px-6 py-4 flex justify-around border-b border-orange-100">
         {[
-          { emoji: '📸', title: 'Фото еды', desc: 'Сфотографируй блюдо — AI посчитает калории автоматически' },
-          { emoji: '🎤', title: 'Голосовой ввод', desc: 'Скажи что съел — распознаём речь и добавляем в дневник' },
-          { emoji: '📊', title: 'Статистика', desc: 'Графики БЖУ, динамика веса, стрики и достижения' },
-          { emoji: '🤖', title: 'AI нутрициолог', desc: 'Персональные советы на основе твоего рациона' },
-        ].map(f => (
-          <div key={f.title} className="flex items-start gap-4 p-4 bg-gray-50 rounded-2xl">
-            <span className="text-2xl">{f.emoji}</span>
-            <div>
-              <p className="font-semibold text-gray-900">{f.title}</p>
-              <p className="text-sm text-gray-500 mt-0.5">{f.desc}</p>
-            </div>
+          { value: '200+', label: 'блюд в базе' },
+          { value: 'AI', label: 'распознавание' },
+          { value: '0 ₽', label: 'бесплатно' },
+        ].map(s => (
+          <div key={s.label} className="text-center">
+            <p className="text-orange-500 font-bold text-lg">{s.value}</p>
+            <p className="text-gray-500 text-xs">{s.label}</p>
           </div>
         ))}
       </div>
 
+      {/* How it works */}
+      <div className="px-6 pt-8 pb-4">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Как это работает</h2>
+        <div className="space-y-3">
+          {[
+            { step: '1', emoji: '📸', text: 'Фотографируй или говори что съел' },
+            { step: '2', emoji: '🤖', text: 'AI распознаёт еду и считает калории' },
+            { step: '3', emoji: '📊', text: 'Следи за прогрессом и достигай цели' },
+          ].map(s => (
+            <div key={s.step} className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">{s.step}</div>
+              <span className="text-xl">{s.emoji}</span>
+              <p className="text-gray-700 text-sm">{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Features */}
+      <div className="px-6 pt-6 pb-4">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Возможности</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { emoji: '📸', title: 'Фото еды', desc: 'AI считает калории по фото' },
+            { emoji: '🎤', title: 'Голосовой ввод', desc: 'Добавляй еду голосом' },
+            { emoji: '🔍', title: 'Штрихкоды', desc: 'Сканируй упаковки' },
+            { emoji: '📖', title: 'База блюд', desc: '200+ русских блюд' },
+            { emoji: '⚖️', title: 'Трекер веса', desc: 'Динамика и ИМТ' },
+            { emoji: '🏆', title: 'Достижения', desc: 'Стрики и награды' },
+            { emoji: '🤖', title: 'AI советник', desc: 'Персональные рекомендации' },
+            { emoji: '📊', title: 'Статистика', desc: 'БЖУ за неделю и месяц' },
+          ].map(f => (
+            <div key={f.title} className="bg-gray-50 rounded-2xl p-3">
+              <span className="text-xl">{f.emoji}</span>
+              <p className="font-semibold text-gray-900 text-sm mt-1">{f.title}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Free plan highlight */}
+      <div className="mx-6 mt-4 bg-green-50 rounded-2xl p-4 border border-green-100">
+        <p className="font-semibold text-green-800 text-sm">✅ Бесплатно навсегда</p>
+        <p className="text-green-700 text-xs mt-1">Дневник, база блюд, статистика и многое другое — без оплаты</p>
+      </div>
+
+      {/* PRO highlight */}
+      <div className="mx-6 mt-3 bg-orange-50 rounded-2xl p-4 border border-orange-100">
+        <p className="font-semibold text-orange-800 text-sm">👑 PRO от 99 ₽/нед</p>
+        <p className="text-orange-700 text-xs mt-1">Безлимитное распознавание фото и приоритетная поддержка</p>
+      </div>
+
       {/* CTA */}
-      <div className="px-6 pb-10 space-y-3">
+      <div className="px-6 pt-6 pb-10 space-y-3">
         <button onClick={() => setShowLanding(false)}
-          className="w-full bg-orange-500 text-white rounded-2xl py-4 font-semibold text-lg">
+          className="w-full bg-orange-500 text-white rounded-2xl py-4 font-semibold text-lg shadow-sm">
           Начать бесплатно
         </button>
         <button onClick={() => setShowLanding(false)}
           className="w-full text-gray-400 text-sm py-2">
           Уже есть аккаунт? Войти
         </button>
+        <p className="text-center text-xs text-gray-300">fitdiary.ru · Дневник питания с AI</p>
       </div>
     </div>
   )

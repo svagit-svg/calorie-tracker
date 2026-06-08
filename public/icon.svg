@@ -1,10 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="114" fill="#f97316"/>
-  <circle cx="256" cy="220" r="110" fill="none" stroke="white" stroke-width="28"/>
-  <line x1="256" y1="330" x2="256" y2="420" stroke="white" stroke-width="28" stroke-linecap="round"/>
-  <line x1="210" y1="375" x2="302" y2="375" stroke="white" stroke-width="28" stroke-linecap="round"/>
-  <line x1="180" y1="130" x2="180" y2="92" stroke="white" stroke-width="22" stroke-linecap="round"/>
-  <line x1="220" y1="130" x2="220" y2="92" stroke="white" stroke-width="22" stroke-linecap="round"/>
-  <line x1="260" y1="130" x2="260" y2="92" stroke="white" stroke-width="22" stroke-linecap="round"/>
-  <path d="M160 130 Q160 160 200 160 Q240 160 240 130" fill="none" stroke="white" stroke-width="22" stroke-linecap="round"/>
+  <!-- plate -->
+  <circle cx="256" cy="240" r="130" fill="white"/>
+  <circle cx="256" cy="240" r="95" fill="#f97316"/>
+  <!-- F letter -->
+  <text x="256" y="285" text-anchor="middle" font-size="130" font-family="Arial, sans-serif" font-weight="900" fill="white">F</text>
+  <!-- fork left -->
+  <line x1="108" y1="120" x2="108" y2="380" stroke="white" stroke-width="22" stroke-linecap="round"/>
+  <line x1="88" y1="120" x2="88" y2="210" stroke="white" stroke-width="16" stroke-linecap="round"/>
+  <line x1="108" y1="120" x2="108" y2="210" stroke="white" stroke-width="16" stroke-linecap="round"/>
+  <line x1="128" y1="120" x2="128" y2="210" stroke="white" stroke-width="16" stroke-linecap="round"/>
+  <path d="M88 210 Q108 230 128 210" fill="none" stroke="white" stroke-width="16" stroke-linecap="round"/>
+  <!-- knife right -->
+  <line x1="404" y1="120" x2="404" y2="380" stroke="white" stroke-width="22" stroke-linecap="round"/>
+  <path d="M404 120 Q440 160 404 240" fill="white"/>
 </svg>
