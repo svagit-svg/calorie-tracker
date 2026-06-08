@@ -150,7 +150,7 @@ export default function ProfileScreen({ onBack, onSignOut, userId, userEmail, on
           <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">👑</div>
           <div className="flex-1">
             <p className="font-bold text-white">PRO подписка активна</p>
-            <p className="text-orange-100 text-xs">Безлимитные фото · AI чат · Экспорт в PDF</p>
+            <p className="text-orange-100 text-xs">Безлимитные фото · AI чат · Поделиться итогами</p>
           </div>
         </div>
       ) : (

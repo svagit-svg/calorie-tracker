@@ -10,6 +10,7 @@ import AchievementsScreen from './achievements'
 import WeightScreen from './weight'
 import ChatScreen from './chat'
 import FoodDBScreen from './fooddb'
+import ShareCard from './share-card'
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: 'Завтрак', emoji: '🌅' },
@@ -79,7 +80,7 @@ function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitRea
               ['📷', 'Безлимитные фото'],
               ['🤖', 'AI чат без ограничений'],
               ['📊', 'Расширенная статистика'],
-              ['📄', 'Экспорт в PDF'],
+              ['📤', 'Поделиться итогами'],
               ['🍽️', 'Анализ рациона'],
               ['⚡', 'Ранний доступ к функциям'],
             ].map(([icon, text]) => (
@@ -135,6 +136,7 @@ export default function Home() {
   const [showWeight, setShowWeight] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showFoodDB, setShowFoodDB] = useState(false)
+  const [showShare, setShowShare] = useState(false)
   const [recommendation, setRecommendation] = useState<{emoji: string; title: string; tip: string} | null>(null)
   const [recDismissed, setRecDismissed] = useState(false)
   const [recLoading, setRecLoading] = useState(false)
@@ -584,7 +586,7 @@ export default function Home() {
       {/* PRO highlight */}
       <div className="mx-6 mt-3 bg-orange-50 rounded-2xl p-4 border border-orange-100">
         <p className="font-semibold text-orange-800 text-sm">👑 PRO от 99 ₽/нед</p>
-        <p className="text-orange-700 text-xs mt-1">Безлимитные фото · AI чат · Экспорт в PDF · Анализ рациона</p>
+        <p className="text-orange-700 text-xs mt-1">Безлимитные фото · AI чат · Анализ рациона · Поделиться итогами</p>
       </div>
 
       {/* CTA */}
@@ -663,6 +665,9 @@ export default function Home() {
           </button>
           <button onClick={() => setShowStats(true)} className="text-gray-400">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </button>
+          <button onClick={() => setShowShare(true)} className="text-gray-400" title="Поделиться">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           </button>
           <button onClick={() => setShowChat(true)}
             className="flex items-center gap-1 bg-orange-500 text-white px-2.5 py-1.5 rounded-full text-xs font-semibold shadow-sm">
@@ -928,6 +933,22 @@ export default function Home() {
 
       {/* Paywall */}
       {showPaywall && <PaywallScreen onClose={() => setShowPaywall(false)} limitReason={totalPhotos >= 10 ? 'photos' : 'daily'} />}
+
+      {/* Share card */}
+      {showShare && user && (
+        <ShareCard
+          onClose={() => setShowShare(false)}
+          name={user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || ''}
+          totalCalories={totalCalories}
+          dailyGoal={dailyGoal}
+          totalProtein={totalProtein}
+          totalCarbs={totalCarbs}
+          totalFat={totalFat}
+          streak={streak}
+          meals={meals}
+          isPro={isPro}
+        />
+      )}
     </main>
   )
 }
