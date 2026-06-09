@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Mic, MicOff } from 'lucide-react'
 import { createClient } from './supabase/client'
 import Onboarding from './onboarding'
@@ -532,7 +533,7 @@ export default function Home() {
 
         {/* Girl image with floating badges */}
         <div className="relative mx-auto" style={{ maxWidth: 340 }}>
-          <img src="/hero.png" alt="FitDiary — считай калории с AI" className="w-full object-contain" />
+          <Image src="/hero-opt.jpg" alt="FitDiary — считай калории с AI" width={800} height={1067} className="w-full object-contain" priority />
 
           {/* Floating badge: calories */}
           <div className="absolute top-8 left-4 bg-white rounded-2xl px-3 py-2 shadow-lg text-left">
