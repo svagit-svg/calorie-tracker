@@ -513,16 +513,48 @@ export default function Home() {
   if (!user && showLanding) return (
     <div className="bg-white max-w-md mx-auto flex flex-col">
       {/* Hero */}
-      <div className="bg-orange-500 px-6 pt-14 pb-10 text-white text-center">
-        <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-3 py-1 text-xs font-medium mb-5">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"></span>
-          Beta
+      <div className="relative overflow-hidden bg-gradient-to-b from-orange-50 to-orange-100 pt-12 text-center">
+        {/* Badge + title */}
+        <div className="px-6 relative z-10">
+          <div className="inline-flex items-center gap-2 bg-orange-500 rounded-full px-3 py-1 text-xs font-semibold text-white mb-4">
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"></span>
+            Beta
+          </div>
+          <h1 className="text-3xl font-extrabold text-gray-900 mb-2 leading-tight">
+            Считай калории<br/>с помощью <span className="text-orange-500">AI</span>
+          </h1>
+          <p className="text-gray-500 text-sm mb-6">Сфотографируй еду — AI мгновенно распознает<br/>состав и посчитает калории</p>
+          <button onClick={() => setShowLanding(false)}
+            className="bg-orange-500 text-white rounded-full px-8 py-3.5 font-bold text-base shadow-lg shadow-orange-200 mb-6">
+            Начать бесплатно →
+          </button>
         </div>
-        <div className="flex justify-center mb-3">
-          <img src="/icon.svg" alt="FitDiary" className="w-20 h-20 rounded-2xl shadow-lg" />
+
+        {/* Girl image with floating badges */}
+        <div className="relative mx-auto" style={{ maxWidth: 340 }}>
+          <img src="/hero.png" alt="FitDiary — считай калории с AI" className="w-full object-contain" />
+
+          {/* Floating badge: calories */}
+          <div className="absolute top-8 left-4 bg-white rounded-2xl px-3 py-2 shadow-lg text-left">
+            <p className="text-xs font-bold text-gray-900">🔥 1840 ккал</p>
+            <p className="text-xs text-gray-400">из 2000 сегодня</p>
+            <div className="mt-1 h-1.5 w-24 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-orange-400 rounded-full" style={{ width: '92%' }} />
+            </div>
+          </div>
+
+          {/* Floating badge: AI recognized */}
+          <div className="absolute top-12 right-2 bg-white rounded-2xl px-3 py-2 shadow-lg text-left">
+            <p className="text-xs font-bold text-orange-500">🤖 AI распознал</p>
+            <p className="text-xs text-gray-700 font-medium">Греческий салат</p>
+            <p className="text-xs text-gray-400">124 ккал · 8г белка</p>
+          </div>
+
+          {/* Floating badge: streak */}
+          <div className="absolute bottom-16 left-6 bg-orange-500 rounded-2xl px-3 py-2 shadow-lg">
+            <p className="text-xs font-bold text-white">🔥 14 дней стрик!</p>
+          </div>
         </div>
-        <h1 className="text-3xl font-bold mb-1">FitDiary</h1>
-        <p className="text-orange-100 text-base">Считай калории с помощью AI</p>
       </div>
 
       {/* Stats bar */}
@@ -595,7 +627,7 @@ export default function Home() {
       {/* CTA */}
       <div className="px-6 pt-6 pb-10 space-y-3">
         <button onClick={() => setShowLanding(false)}
-          className="w-full bg-orange-500 text-white rounded-2xl py-4 font-semibold text-lg shadow-sm">
+          className="w-full bg-orange-500 text-white rounded-2xl py-4 font-bold text-lg shadow-lg shadow-orange-200">
           Начать бесплатно
         </button>
         <button onClick={() => setShowLanding(false)}
