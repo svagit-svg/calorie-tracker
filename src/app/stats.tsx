@@ -1,13 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronLeft, TrendingUp, Utensils, Flame, Calendar } from 'lucide-react'
+import { ChevronLeft, TrendingUp, Utensils, Flame, Calendar, Share2 } from 'lucide-react'
 import { createClient } from './supabase/client'
+import ShareCard from './share-card'
 
 type Props = {
   onBack: () => void
   userId: string
   dailyGoal: number
+  userName: string
+  streak: number
 }
 
 type DayData = {
@@ -17,12 +20,13 @@ type DayData = {
 }
 
 
-export default function StatsScreen({ onBack, userId, dailyGoal }: Props) {
+export default function StatsScreen({ onBack, userId, dailyGoal, userName, streak }: Props) {
   const supabase = createClient()
   const [period, setPeriod] = useState<'week' | 'month'>('week')
   const [days, setDays] = useState<DayData[]>([])
   const [favDish, setFavDish] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showShare, setShowShare] = useState(false)
 
   useEffect(() => {
     loadStats()
@@ -81,7 +85,27 @@ export default function StatsScreen({ onBack, userId, dailyGoal }: Props) {
       <div className="bg-white px-4 pt-12 pb-4 shadow-sm flex items-center gap-3">
         <button onClick={onBack}><ChevronLeft size={24} className="text-gray-400" /></button>
         <h1 className="text-xl font-bold flex-1">Статистика</h1>
+        {!loading && activeDays.length > 0 && (
+          <button onClick={() => setShowShare(true)} className="text-orange-400 p-1">
+            <Share2 size={22} />
+          </button>
+        )}
       </div>
+
+      {showShare && (
+        <ShareCard
+          type="stats"
+          onClose={() => setShowShare(false)}
+          name={userName}
+          period={period === 'week' ? '7 дней' : '30 дней'}
+          avgCalories={avgCalories}
+          dailyGoal={dailyGoal}
+          daysTracked={activeDays.length}
+          totalDays={days.length}
+          streak={streak}
+          favDish={favDish}
+        />
+      )}
 
       {/* Period toggle */}
       <div className="mx-4 mt-4 bg-white rounded-2xl p-1 flex shadow-sm">

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronLeft, Plus, Scale, Target, Droplets, Dumbbell, Brain } from 'lucide-react'
+import { ChevronLeft, Plus, Scale, Target, Droplets, Dumbbell, Brain, Share2 } from 'lucide-react'
 import { createClient } from './supabase/client'
+import ShareCard from './share-card'
 
 type WeightLog = { id: string; weight: number; logged_at: string }
 type Profile = { weight: number; height: number; age: number; gender: string; activity: string }
@@ -13,6 +14,8 @@ type Props = {
   startWeight: number
   currentGoal: 'lose' | 'maintain' | 'gain'
   onWeightUpdate: (weight: number) => void
+  userName: string
+  streak: number
 }
 
 function calcMetrics(p: Profile) {
@@ -32,7 +35,7 @@ function calcMetrics(p: Profile) {
   return { bmi, bmiLabel, bmiColor, idealWeight, water, protein, tdee, bmr, avgBmr }
 }
 
-export default function WeightScreen({ onBack, userId, startWeight, currentGoal, onWeightUpdate }: Props) {
+export default function WeightScreen({ onBack, userId, startWeight, currentGoal, onWeightUpdate, userName, streak }: Props) {
   const supabase = createClient()
   const [logs, setLogs] = useState<WeightLog[]>([])
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -41,6 +44,7 @@ export default function WeightScreen({ onBack, userId, startWeight, currentGoal,
   const [saved, setSaved] = useState(false)
   const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0])
   const [chartMode, setChartMode] = useState<'weight' | 'bmi'>('weight')
+  const [showShare, setShowShare] = useState(false)
 
   useEffect(() => { loadAll() }, [])
 
@@ -102,7 +106,26 @@ export default function WeightScreen({ onBack, userId, startWeight, currentGoal,
       <div className="bg-white px-4 pt-12 pb-4 shadow-sm flex items-center gap-3">
         <button onClick={onBack}><ChevronLeft size={24} className="text-gray-400" /></button>
         <h1 className="text-xl font-bold flex-1">Моё тело</h1>
+        {metrics && lastWeight && (
+          <button onClick={() => setShowShare(true)} className="text-orange-400 p-1">
+            <Share2 size={22} />
+          </button>
+        )}
       </div>
+
+      {showShare && metrics && lastWeight && (
+        <ShareCard
+          type="body"
+          onClose={() => setShowShare(false)}
+          name={userName}
+          currentWeight={lastWeight}
+          startWeight={firstWeight}
+          bmi={metrics.bmi}
+          bmiLabel={metrics.bmiLabel}
+          goal={currentGoal}
+          streak={streak}
+        />
+      )}
 
       {/* Stats */}
       <div className="mx-4 mt-4 grid grid-cols-4 gap-2">
