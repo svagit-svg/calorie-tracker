@@ -62,7 +62,7 @@ function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => vo
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'home',    label: 'Сегодня',    icon: <HomeIcon size={22} /> },
     { key: 'stats',   label: 'Статистика', icon: <BarChart2 size={22} /> },
-    { key: 'weight',  label: 'Вес',        icon: <Scale size={22} /> },
+    { key: 'weight',  label: 'Моё тело',   icon: <Scale size={22} /> },
     { key: 'profile', label: 'Профиль',    icon: <User size={22} /> },
   ]
   return (
