@@ -102,7 +102,7 @@ export default function WeightScreen({ onBack, userId, startWeight, currentGoal,
       .map(l => new Date(l.logged_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }))
 
   return (
-    <div className="min-h-screen bg-gray-50 max-w-md mx-auto pb-8">
+    <div className="min-h-screen bg-gray-50 max-w-md mx-auto pb-24">
       <div className="bg-white px-4 pt-12 pb-4 shadow-sm flex items-center gap-3">
         <button onClick={onBack}><ChevronLeft size={24} className="text-gray-400" /></button>
         <h1 className="text-xl font-bold flex-1">Моё тело</h1>

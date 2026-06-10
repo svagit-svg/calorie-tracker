@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Mic, MicOff } from 'lucide-react'
+import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Mic, MicOff, Home as HomeIcon, BarChart2, Scale, User } from 'lucide-react'
 import { createClient } from './supabase/client'
 import Onboarding from './onboarding'
 import ProfileScreen from './profile'
@@ -50,12 +50,54 @@ type PendingMeal = {
   meal_type: string
 }
 
+type Tab = 'home' | 'stats' | 'weight' | 'profile'
 
 const PLANS = [
   { key: 'week',  label: 'Неделя',  price: 99,   perDay: 14,  badge: null },
   { key: 'month', label: 'Месяц',   price: 299,  perDay: 10,  badge: 'Популярный' },
   { key: 'year',  label: 'Год',     price: 1990, perDay: 5,   badge: 'Выгоднее на 33%' },
 ]
+
+function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
+  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: 'home',    label: 'Сегодня',    icon: <HomeIcon size={22} /> },
+    { key: 'stats',   label: 'Статистика', icon: <BarChart2 size={22} /> },
+    { key: 'weight',  label: 'Вес',        icon: <Scale size={22} /> },
+    { key: 'profile', label: 'Профиль',    icon: <User size={22} /> },
+  ]
+  return (
+    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 flex z-40">
+      {tabs.map(t => (
+        <button key={t.key} onClick={() => onChange(t.key)}
+          className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors ${active === t.key ? 'text-orange-500' : 'text-gray-400'}`}>
+          {t.icon}
+          <span className="text-xs font-medium">{t.label}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function CalorieRing({ consumed, goal }: { consumed: number; goal: number }) {
+  const R = 44
+  const C = 2 * Math.PI * R
+  const pct = Math.min(consumed / Math.max(goal, 1), 1)
+  const isOver = consumed > goal
+  return (
+    <svg width="112" height="112" viewBox="0 0 112 112">
+      <circle cx="56" cy="56" r={R} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="9" />
+      <circle cx="56" cy="56" r={R} fill="none"
+        stroke={isOver ? '#fca5a5' : 'white'}
+        strokeWidth="9"
+        strokeLinecap="round"
+        strokeDasharray={`${C * pct} ${C}`}
+        transform="rotate(-90 56 56)"
+      />
+      <text x="56" y="52" textAnchor="middle" fill="white" fontSize="17" fontWeight="bold" fontFamily="system-ui">{consumed}</text>
+      <text x="56" y="66" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="10" fontFamily="system-ui">ккал</text>
+    </svg>
+  )
+}
 
 function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitReason: 'photos' | 'daily' }) {
   const [selected, setSelected] = useState('month')
@@ -64,7 +106,6 @@ function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitRea
   return (
     <div className="fixed inset-0 bg-black/60 flex items-end z-50">
       <div className="bg-white w-full max-w-md mx-auto rounded-t-3xl overflow-hidden">
-        {/* Hero */}
         <div className="bg-gradient-to-br from-orange-400 to-orange-600 px-6 pt-8 pb-6 text-white text-center">
           <div className="text-5xl mb-3">🚀</div>
           <h2 className="text-2xl font-bold mb-1">Перейти на PRO</h2>
@@ -72,9 +113,7 @@ function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitRea
             {limitReason === 'photos' ? 'Вы использовали все 10 бесплатных распознаваний' : 'Бесплатно — 1 фото в день'}
           </p>
         </div>
-
         <div className="px-6 pt-5 pb-6">
-          {/* Features */}
           <div className="grid grid-cols-2 gap-2 mb-5">
             {[
               ['📷', 'Безлимитные фото'],
@@ -90,8 +129,6 @@ function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitRea
               </div>
             ))}
           </div>
-
-          {/* Plans */}
           <div className="flex gap-2 mb-5">
             {PLANS.map(p => (
               <button key={p.key} onClick={() => setSelected(p.key)}
@@ -107,8 +144,6 @@ function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitRea
               </button>
             ))}
           </div>
-
-          {/* CTA */}
           <button className="w-full bg-orange-500 text-white rounded-2xl py-4 font-bold text-lg shadow-lg shadow-orange-200 mb-3">
             Оформить за {plan.price} ₽ · {plan.label.toLowerCase()}
           </button>
@@ -126,17 +161,14 @@ export default function Home() {
   const [user, setUser] = useState<any>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [showProfile, setShowProfile] = useState(false)
-  const [showStats, setShowStats] = useState(false)
+  const [activeTab, setActiveTab] = useState<Tab>('home')
   const [showPaywall, setShowPaywall] = useState(false)
   const [isPro, setIsPro] = useState(false)
   const [totalPhotos, setTotalPhotos] = useState(0)
   const [streak, setStreak] = useState(0)
   const [showAchievements, setShowAchievements] = useState(false)
-  const [showWeight, setShowWeight] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showFoodDB, setShowFoodDB] = useState(false)
-  const [showShare, setShowShare] = useState(false)
   const [recommendation, setRecommendation] = useState<{emoji: string; title: string; tip: string} | null>(null)
   const [recDismissed, setRecDismissed] = useState(false)
   const [recLoading, setRecLoading] = useState(false)
@@ -153,6 +185,7 @@ export default function Home() {
   const [pending, setPending] = useState<PendingMeal | null>(null)
   const [showManual, setShowManual] = useState(false)
   const [manual, setManual] = useState({ name: '', calories: '', protein: '', carbs: '', fat: '', meal_type: detectMealType() })
+  const [water, setWater] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isListening, setIsListening] = useState(false)
   const [voicePending, setVoicePending] = useState<any[]>([])
@@ -173,13 +206,26 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Load water from localStorage
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0]
+    const saved = localStorage.getItem(`water_${today}`)
+    setWater(Number(saved) || 0)
+  }, [])
+
+  const toggleWater = (n: number) => {
+    const today = new Date().toISOString().split('T')[0]
+    const newVal = water >= n ? n - 1 : n
+    setWater(newVal)
+    localStorage.setItem(`water_${today}`, String(newVal))
+  }
+
   const loadProfile = async (userId: string) => {
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
     if (!data || !data.gender) {
       setShowOnboarding(true)
     } else {
       setDailyGoal(data.daily_goal || 2000)
-      // Подтянуть имя из OAuth если не было сохранено
       if (!data.name) {
         const { data: { user: u } } = await supabase.auth.getUser()
         const name = u?.user_metadata?.full_name || u?.user_metadata?.name || ''
@@ -240,17 +286,14 @@ export default function Home() {
   const startVoice = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) { alert('Голосовой ввод не поддерживается в этом браузере'); return }
-
     const recognition = new SpeechRecognition()
     recognition.lang = 'ru-RU'
     recognition.interimResults = false
     recognition.maxAlternatives = 1
     recognitionRef.current = recognition
-
     recognition.onstart = () => setIsListening(true)
     recognition.onend = () => setIsListening(false)
     recognition.onerror = () => setIsListening(false)
-
     recognition.onresult = async (event: any) => {
       const transcript = event.results[0][0].transcript
       setLoading(true)
@@ -376,7 +419,6 @@ export default function Home() {
     setMeals(prev => prev.filter(m => m.id !== id))
   }
 
-  // Auto-fetch recommendation in the evening if there are meals
   useEffect(() => {
     const hour = new Date().getHours()
     const todayKey = `rec_${new Date().toISOString().split('T')[0]}`
@@ -418,7 +460,6 @@ export default function Home() {
   const totalCarbs = meals.reduce((sum, m) => sum + m.carbs, 0)
   const totalFat = meals.reduce((sum, m) => sum + m.fat, 0)
   const remaining = Math.max(dailyGoal - totalCalories, 0)
-  const progress = Math.min((totalCalories / dailyGoal) * 100, 100)
   const isToday = selectedDate.toDateString() === new Date().toDateString()
   const dateLabel = selectedDate.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
 
@@ -432,7 +473,6 @@ export default function Home() {
     setSelectedDate(d); if (user) loadMeals(user.id, d)
   }
 
-  // Group meals by type
   const mealsByType = MEAL_TYPES.map(type => ({
     ...type,
     meals: meals.filter(m => m.meal_type === type.key),
@@ -441,6 +481,8 @@ export default function Home() {
 
   const otherMeals = meals.filter(m => !MEAL_TYPES.find(t => t.key === m.meal_type))
 
+  const userName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || ''
+
   if (authLoading) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 size={32} className="animate-spin text-orange-500" />
@@ -448,6 +490,7 @@ export default function Home() {
   )
 
   if (showOnboarding && user) return <Onboarding onComplete={saveProfile} />
+
   if (showFoodDB && user) return (
     <FoodDBScreen
       onBack={() => setShowFoodDB(false)}
@@ -474,40 +517,40 @@ export default function Home() {
       isPro={isPro}
       userId={user.id}
       onShowPaywall={() => { setShowChat(false); setShowPaywall(true) }}
-      context={{
-        dailyGoal,
-        totalCalories,
-        totalProtein,
-        totalCarbs,
-        totalFat,
-        remaining,
-        meals,
-        goal: userGoal,
-      }}
+      context={{ dailyGoal, totalCalories, totalProtein, totalCarbs, totalFat, remaining, meals, goal: userGoal }}
     />
   )
 
-  if (showWeight && user) return (
-    <WeightScreen onBack={() => setShowWeight(false)} userId={user.id} startWeight={startWeight}
-      currentGoal={userGoal} onWeightUpdate={(w) => { setStartWeight(w); setProfileKey(k => k + 1) }}
-      userName={user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || ''}
-      streak={streak} />
-  )
   if (showAchievements && user) return (
     <AchievementsScreen onBack={() => setShowAchievements(false)} userId={user.id} streak={streak} />
   )
-  if (showStats && user) return (
-    <StatsScreen onBack={() => setShowStats(false)} userId={user.id} dailyGoal={dailyGoal}
-      userName={user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || ''}
-      streak={streak} />
-  )
-  if (showProfile && user) return (
+
+  // Tab screens
+  if (activeTab === 'stats' && user) return (
     <>
-      <ProfileScreen key={profileKey} onBack={() => setShowProfile(false)} onSignOut={handleSignOut}
+      <StatsScreen onBack={() => setActiveTab('home')} userId={user.id} dailyGoal={dailyGoal}
+        userName={userName} streak={streak} />
+      <BottomNav active={activeTab} onChange={setActiveTab} />
+    </>
+  )
+
+  if (activeTab === 'weight' && user) return (
+    <>
+      <WeightScreen onBack={() => setActiveTab('home')} userId={user.id} startWeight={startWeight}
+        currentGoal={userGoal} onWeightUpdate={(w) => { setStartWeight(w); setProfileKey(k => k + 1) }}
+        userName={userName} streak={streak} />
+      <BottomNav active={activeTab} onChange={setActiveTab} />
+    </>
+  )
+
+  if (activeTab === 'profile' && user) return (
+    <>
+      <ProfileScreen key={profileKey} onBack={() => setActiveTab('home')} onSignOut={handleSignOut}
         userId={user.id} userEmail={user.email || ''}
-        onGoalUpdate={(goal) => { setDailyGoal(goal); setShowProfile(false) }}
+        onGoalUpdate={(goal) => { setDailyGoal(goal); setActiveTab('home') }}
         onShowPaywall={() => setShowPaywall(true)} />
       {showPaywall && <PaywallScreen onClose={() => setShowPaywall(false)} limitReason={totalPhotos >= 10 ? 'photos' : 'daily'} />}
+      <BottomNav active={activeTab} onChange={setActiveTab} />
     </>
   )
 
@@ -515,7 +558,6 @@ export default function Home() {
     <div className="bg-white max-w-md mx-auto flex flex-col">
       {/* Hero */}
       <div className="relative overflow-hidden bg-gradient-to-b from-orange-50 to-orange-100 pt-12 text-center">
-        {/* Badge + title */}
         <div className="px-6 relative z-10">
           <div className="inline-flex items-center gap-2 bg-orange-500 rounded-full px-3 py-1 text-xs font-semibold text-white mb-4">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block"></span>
@@ -530,12 +572,8 @@ export default function Home() {
             Начать бесплатно →
           </button>
         </div>
-
-        {/* Girl image with floating badges */}
         <div className="relative mx-auto" style={{ maxWidth: 340 }}>
           <Image src="/hero-opt.jpg" alt="FitDiary — считай калории с AI" width={800} height={1067} className="w-full object-contain" priority />
-
-          {/* Floating badge: calories */}
           <div className="absolute top-8 left-4 bg-white rounded-2xl px-3 py-2 shadow-lg text-left">
             <p className="text-xs font-bold text-gray-900">🔥 1840 ккал</p>
             <p className="text-xs text-gray-400">из 2000 сегодня</p>
@@ -543,25 +581,20 @@ export default function Home() {
               <div className="h-full bg-orange-400 rounded-full" style={{ width: '92%' }} />
             </div>
           </div>
-
-          {/* Floating badge: AI recognized */}
           <div className="absolute top-12 right-2 bg-white rounded-2xl px-3 py-2 shadow-lg text-left">
             <p className="text-xs font-bold text-orange-500">🤖 AI распознал</p>
             <p className="text-xs text-gray-700 font-medium">Греческий салат</p>
             <p className="text-xs text-gray-400">124 ккал · 8г белка</p>
           </div>
-
-          {/* Floating badge: streak */}
           <div className="absolute bottom-16 left-6 bg-orange-500 rounded-2xl px-3 py-2 shadow-lg">
             <p className="text-xs font-bold text-white">🔥 14 дней стрик!</p>
           </div>
         </div>
       </div>
 
-      {/* Stats bar */}
       <div className="bg-orange-50 px-6 py-4 flex justify-around border-b border-orange-100">
         {[
-          { value: '200+', label: 'блюд в базе' },
+          { value: '400+', label: 'блюд в базе' },
           { value: 'AI', label: 'распознавание' },
           { value: '0 ₽', label: 'бесплатно' },
         ].map(s => (
@@ -572,7 +605,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* How it works */}
       <div className="px-6 pt-8 pb-4">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Как это работает</h2>
         <div className="space-y-3">
@@ -590,7 +622,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Features */}
       <div className="px-6 pt-6 pb-4">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Возможности</h2>
         <div className="grid grid-cols-2 gap-3">
@@ -598,7 +629,7 @@ export default function Home() {
             { emoji: '📸', title: 'Фото еды', desc: 'AI считает калории по фото' },
             { emoji: '🎤', title: 'Голосовой ввод', desc: 'Добавляй еду голосом' },
             { emoji: '🔍', title: 'Штрихкоды', desc: 'Сканируй упаковки' },
-            { emoji: '📖', title: 'База блюд', desc: '200+ русских блюд' },
+            { emoji: '📖', title: 'База блюд', desc: '400+ русских блюд' },
             { emoji: '⚖️', title: 'Трекер веса', desc: 'Динамика и ИМТ' },
             { emoji: '🏆', title: 'Достижения', desc: 'Стрики и награды' },
             { emoji: '🤖', title: 'AI советник', desc: 'Персональные рекомендации' },
@@ -613,19 +644,16 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Free plan highlight */}
       <div className="mx-6 mt-4 bg-green-50 rounded-2xl p-4 border border-green-100">
         <p className="font-semibold text-green-800 text-sm">✅ Бесплатно навсегда</p>
         <p className="text-green-700 text-xs mt-1">Дневник, база блюд, статистика и многое другое — без оплаты</p>
       </div>
 
-      {/* PRO highlight */}
       <div className="mx-6 mt-3 bg-orange-50 rounded-2xl p-4 border border-orange-100">
         <p className="font-semibold text-orange-800 text-sm">👑 PRO от 99 ₽/нед</p>
         <p className="text-orange-700 text-xs mt-1">Безлимитные фото · AI чат · Анализ рациона · Поделиться итогами</p>
       </div>
 
-      {/* CTA */}
       <div className="px-6 pt-6 pb-10 space-y-3">
         <button onClick={() => setShowLanding(false)}
           className="w-full bg-orange-500 text-white rounded-2xl py-4 font-bold text-lg shadow-lg shadow-orange-200">
@@ -659,27 +687,22 @@ export default function Home() {
         {authSuccess && <p className="text-green-600 text-sm bg-green-50 rounded-xl px-3 py-2">{authSuccess}</p>}
         <button onClick={handleSignIn} className="w-full bg-orange-500 text-white rounded-xl py-3 font-medium">Войти</button>
         <button onClick={handleSignUp} className="w-full border border-orange-500 text-orange-500 rounded-xl py-3 font-medium">Зарегистрироваться</button>
-
         <div className="flex items-center gap-3 my-1">
           <div className="flex-1 h-px bg-gray-200" />
           <span className="text-xs text-gray-400">или войти через</span>
           <div className="flex-1 h-px bg-gray-200" />
         </div>
-
         <button onClick={() => handleOAuth('google')}
           className="w-full border border-gray-200 rounded-xl py-3 font-medium flex items-center justify-center gap-3 text-gray-700 active:bg-gray-50">
           <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
           Google
         </button>
-
-        <button onClick={() => setShowLanding(true)}
-          className="w-full text-gray-400 text-sm py-1">
-          ← Назад
-        </button>
+        <button onClick={() => setShowLanding(true)} className="w-full text-gray-400 text-sm py-1">← Назад</button>
       </div>
     </div>
   )
 
+  // Main home screen
   return (
     <main className="min-h-screen bg-gray-50 max-w-md mx-auto">
       {/* Header */}
@@ -696,39 +719,30 @@ export default function Home() {
           <button onClick={() => setShowAchievements(true)} className="flex items-center gap-1 text-orange-500">
             <span className="text-sm font-bold">{streak}</span><span>🔥</span>
           </button>
-          <button onClick={() => setShowWeight(true)} className="text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
-          </button>
-          <button onClick={() => setShowStats(true)} className="text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          </button>
-<button onClick={() => setShowChat(true)}
+          <button onClick={() => setShowChat(true)}
             className="flex items-center gap-1 bg-orange-500 text-white px-2.5 py-1.5 rounded-full text-xs font-semibold shadow-sm">
             🥗 AI
-          </button>
-          <button onClick={() => setShowProfile(true)} className="text-gray-400">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           </button>
           <button onClick={handleSignOut} className="text-gray-400"><LogOut size={20} /></button>
         </div>
       </div>
 
-      {/* Calories Card */}
+      {/* Calories Card with ring */}
       <div className="mx-4 mt-4 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-5 text-white shadow-lg">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <p className="text-orange-100 text-sm">Съедено</p>
-            <p className="text-4xl font-bold">{totalCalories}</p>
-            <p className="text-orange-100 text-sm">из {dailyGoal} ккал</p>
+        <div className="flex items-center gap-4 mb-4">
+          <CalorieRing consumed={totalCalories} goal={dailyGoal} />
+          <div className="flex-1 space-y-3">
+            <div>
+              <p className="text-orange-100 text-xs">Цель на день</p>
+              <p className="text-2xl font-bold">{dailyGoal} ккал</p>
+            </div>
+            <div>
+              <p className="text-orange-100 text-xs">{totalCalories > dailyGoal ? 'Сверх нормы' : 'Осталось'}</p>
+              <p className={`text-2xl font-bold ${totalCalories > dailyGoal ? 'text-red-200' : 'text-white'}`}>
+                {Math.abs(dailyGoal - totalCalories)} ккал
+              </p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-orange-100 text-sm">Осталось</p>
-            <p className="text-3xl font-bold">{remaining}</p>
-            <p className="text-orange-100 text-sm">ккал</p>
-          </div>
-        </div>
-        <div className="bg-orange-300 rounded-full h-2 mb-4">
-          <div className="bg-white rounded-full h-2 transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[['Белки', totalProtein, <Beef size={16} key="b"/>], ['Углеводы', totalCarbs, <Wheat size={16} key="u"/>], ['Жиры', totalFat, <Droplets size={16} key="zh"/>]].map(([label, val, icon]) => (
@@ -737,6 +751,22 @@ export default function Home() {
               <p className="text-lg font-bold">{val as number}г</p>
               <p className="text-orange-100 text-xs">{label as string}</p>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Water Tracker */}
+      <div className="mx-4 mt-3 bg-white rounded-2xl px-4 py-3.5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold text-gray-700">💧 Вода</p>
+          <p className="text-xs text-gray-400">{water} / 8 · {water * 250} мл</p>
+        </div>
+        <div className="flex gap-1.5">
+          {Array.from({ length: 8 }, (_, i) => (
+            <button key={i} onClick={() => toggleWater(i + 1)}
+              className={`flex-1 h-9 rounded-xl text-sm transition-all active:scale-95 ${i < water ? 'bg-blue-400 text-white shadow-sm' : 'bg-gray-100 text-gray-300'}`}>
+              {i < water ? '💧' : '○'}
+            </button>
           ))}
         </div>
       </div>
@@ -756,7 +786,7 @@ export default function Home() {
       )}
 
       {/* Meals grouped by type */}
-      <div className="mx-4 mt-4 pb-32">
+      <div className="mx-4 mt-4 pb-36">
         {meals.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <div className="text-4xl mb-2">📷</div>
@@ -820,9 +850,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* Meal type selector component */}
-      {(pending || showManual) && null}
-
       {/* Confirmation modal */}
       {pending && (
         <div className="fixed inset-0 bg-black/50 flex items-end z-50">
@@ -834,8 +861,6 @@ export default function Home() {
                 <p className="text-gray-400 text-sm">на 100г: {pending.calories} ккал</p>
               </div>
             </div>
-
-            {/* Meal type selector */}
             <div className="mb-4">
               <label className="text-sm text-gray-500 mb-2 block">Приём пищи</label>
               <div className="flex gap-2">
@@ -847,7 +872,6 @@ export default function Home() {
                 ))}
               </div>
             </div>
-
             <div className="mb-4">
               <label className="text-sm text-gray-500 mb-1 block">Сколько грамм съели?</label>
               <div className="flex items-center gap-3">
@@ -877,8 +901,6 @@ export default function Home() {
               <h3 className="font-bold text-lg">Добавить вручную</h3>
               <button onClick={() => setShowManual(false)}><X size={24} className="text-gray-400" /></button>
             </div>
-
-            {/* Meal type selector */}
             <div className="mb-3">
               <label className="text-sm text-gray-500 mb-2 block">Приём пищи</label>
               <div className="flex gap-2">
@@ -890,7 +912,6 @@ export default function Home() {
                 ))}
               </div>
             </div>
-
             <div className="space-y-3">
               <input placeholder="Название блюда" value={manual.name} onChange={e => setManual({...manual, name: e.target.value})}
                 className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-orange-400" />
@@ -912,8 +933,8 @@ export default function Home() {
 
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
 
-      {/* Buttons */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
+      {/* Floating action buttons — raised above bottom nav */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 flex gap-3">
         <button onClick={() => setShowFoodDB(true)}
           className="bg-white text-orange-500 border-2 border-orange-500 rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:scale-95 transition-transform text-xl">
           🍽️
@@ -967,7 +988,8 @@ export default function Home() {
       {/* Paywall */}
       {showPaywall && <PaywallScreen onClose={() => setShowPaywall(false)} limitReason={totalPhotos >= 10 ? 'photos' : 'daily'} />}
 
-
+      {/* Bottom navigation */}
+      <BottomNav active={activeTab} onChange={setActiveTab} />
     </main>
   )
 }

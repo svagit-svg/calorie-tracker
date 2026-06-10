@@ -108,7 +108,7 @@ export default function ProfileScreen({ onBack, onSignOut, userId, userEmail, on
   const activities = { low: 'Низкий', medium: 'Средний', high: 'Высокий' }
 
   return (
-    <div className="min-h-screen bg-gray-50 max-w-md mx-auto pb-8">
+    <div className="min-h-screen bg-gray-50 max-w-md mx-auto pb-24">
       {/* Header */}
       <div className="bg-white px-4 pt-12 pb-4 shadow-sm flex items-center gap-3">
         <button onClick={onBack}><ChevronLeft size={24} className="text-gray-400" /></button>
