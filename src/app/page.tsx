@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Mic, MicOff, Home as HomeIcon, BarChart2, Scale, User } from 'lucide-react'
+import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Mic, MicOff, Home as HomeIcon, BarChart2, Scale, User, Star, ChevronRight } from 'lucide-react'
 import { createClient } from './supabase/client'
 import Onboarding from './onboarding'
 import ProfileScreen from './profile'
@@ -11,6 +11,7 @@ import AchievementsScreen from './achievements'
 import WeightScreen from './weight'
 import ChatScreen from './chat'
 import FoodDBScreen from './fooddb'
+import ChallengesScreen from './challenges'
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: 'Завтрак', emoji: '🌅' },
@@ -96,6 +97,39 @@ function CalorieRing({ consumed, goal }: { consumed: number; goal: number }) {
       <text x="56" y="52" textAnchor="middle" fill="white" fontSize="17" fontWeight="bold" fontFamily="system-ui">{consumed}</text>
       <text x="56" y="66" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="10" fontFamily="system-ui">ккал</text>
     </svg>
+  )
+}
+
+function HintsCard({ onDismiss }: { onDismiss: () => void }) {
+  const [step, setStep] = useState(0)
+  const hints = [
+    { icon: '📷', title: 'Сфотографируй еду', desc: 'AI распознает блюдо и посчитает калории за секунду' },
+    { icon: '🎤', title: 'Говори что съел', desc: 'Нажми на микрофон и скажи «борщ и хлеб»' },
+    { icon: '⭐', title: 'Сохраняй в избранное', desc: 'Нажми звёздочку на блюде — добавишь одним tap в следующий раз' },
+  ]
+  const h = hints[step]
+  return (
+    <div className="mb-4 bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 border border-orange-100">
+      <div className="flex items-start gap-3">
+        <span className="text-3xl">{h.icon}</span>
+        <div className="flex-1">
+          <p className="font-semibold text-gray-900 text-sm">{h.title}</p>
+          <p className="text-gray-500 text-xs mt-0.5 leading-relaxed">{h.desc}</p>
+        </div>
+        <button onClick={onDismiss} className="text-gray-300 text-xl leading-none mt-0.5">×</button>
+      </div>
+      <div className="flex items-center justify-between mt-3">
+        <div className="flex gap-1.5">
+          {hints.map((_, i) => (
+            <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${i === step ? 'bg-orange-500 w-3' : 'bg-orange-200'}`} />
+          ))}
+        </div>
+        {step < hints.length - 1
+          ? <button onClick={() => setStep(s => s + 1)} className="text-orange-500 text-xs font-semibold">Далее →</button>
+          : <button onClick={onDismiss} className="text-orange-500 text-xs font-semibold">Понятно!</button>
+        }
+      </div>
+    </div>
   )
 }
 
@@ -186,6 +220,9 @@ export default function Home() {
   const [showManual, setShowManual] = useState(false)
   const [manual, setManual] = useState({ name: '', calories: '', protein: '', carbs: '', fat: '', meal_type: detectMealType() })
   const [water, setWater] = useState(0)
+  const [favorites, setFavorites] = useState<Omit<Meal, 'id' | 'eaten_at'>[]>([])
+  const [hintsShown, setHintsShown] = useState(true)
+  const [showChallenges, setShowChallenges] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isListening, setIsListening] = useState(false)
   const [voicePending, setVoicePending] = useState<any[]>([])
@@ -206,12 +243,55 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Load water from localStorage
+  // Load water, favorites and hints from localStorage
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]
     const saved = localStorage.getItem(`water_${today}`)
     setWater(Number(saved) || 0)
+    const favs = JSON.parse(localStorage.getItem('favorites') || '[]')
+    setFavorites(favs)
+    setHintsShown(!!localStorage.getItem('hints_done'))
   }, [])
+
+  const repeatYesterday = async () => {
+    if (!user) return
+    const yesterday = new Date(selectedDate)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yStr = yesterday.toISOString().split('T')[0]
+    const yNext = new Date(yesterday); yNext.setDate(yNext.getDate() + 1)
+    const { data } = await supabase.from('meals').select('*')
+      .eq('user_id', user.id).gte('eaten_at', yStr).lt('eaten_at', yNext.toISOString().split('T')[0])
+    if (!data?.length) { alert('Вчера записей нет'); return }
+    const today = selectedDate.toISOString().split('T')[0]
+    const insertData = data.map(m => ({
+      user_id: user.id, name: m.name, calories: m.calories, protein: m.protein,
+      carbs: m.carbs, fat: m.fat, emoji: m.emoji, meal_type: m.meal_type, eaten_at: today,
+    }))
+    const { data: newMeals } = await supabase.from('meals').insert(insertData).select()
+    if (newMeals) setMeals(prev => [...prev, ...newMeals])
+  }
+
+  const toggleFavorite = (meal: Meal) => {
+    const exists = favorites.find(f => f.name === meal.name)
+    const newFavs = exists
+      ? favorites.filter(f => f.name !== meal.name)
+      : [...favorites, { name: meal.name, calories: meal.calories, protein: meal.protein, carbs: meal.carbs, fat: meal.fat, emoji: meal.emoji, meal_type: meal.meal_type }]
+    setFavorites(newFavs)
+    localStorage.setItem('favorites', JSON.stringify(newFavs))
+  }
+
+  const addFromFavorite = async (fav: typeof favorites[0]) => {
+    if (!user) return
+    const { data: meal } = await supabase.from('meals').insert({
+      user_id: user.id, ...fav, meal_type: fav.meal_type || detectMealType(),
+    }).select().single()
+    if (meal) setMeals(prev => [...prev, meal])
+  }
+
+  const dismissHints = () => {
+    localStorage.setItem('hints_done', '1')
+    setHintsShown(true)
+  }
 
   const toggleWater = (n: number) => {
     const today = new Date().toISOString().split('T')[0]
@@ -525,6 +605,13 @@ export default function Home() {
     <AchievementsScreen onBack={() => setShowAchievements(false)} userId={user.id} streak={streak} />
   )
 
+  if (showChallenges && user) return (
+    <>
+      <ChallengesScreen onBack={() => setShowChallenges(false)} userId={user.id} streak={streak} dailyGoal={dailyGoal} />
+      <BottomNav active={activeTab} onChange={setActiveTab} />
+    </>
+  )
+
   // Tab screens
   if (activeTab === 'stats' && user) return (
     <>
@@ -669,7 +756,7 @@ export default function Home() {
   )
 
   if (!user) return (
-    <div className="min-h-screen bg-gray-50 max-w-md mx-auto flex flex-col justify-center px-6">
+    <div className="min-h-screen bg-gray-50 w-full max-w-md mx-auto flex flex-col justify-center px-6">
       <div className="text-center mb-8">
         <div className="text-5xl mb-3">🥗</div>
         <div className="flex items-center justify-center gap-2">
@@ -704,7 +791,7 @@ export default function Home() {
 
   // Main home screen
   return (
-    <main className="min-h-screen bg-gray-50 max-w-md mx-auto">
+    <main className="min-h-screen bg-gray-50 w-full max-w-md mx-auto">
       {/* Header */}
       <div className="bg-white px-4 pt-12 pb-4 shadow-sm flex justify-between items-end">
         <div className="flex-1">
@@ -771,6 +858,19 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Weekly Challenges teaser */}
+      <div className="mx-4 mt-3">
+        <button onClick={() => setShowChallenges(true)}
+          className="w-full bg-white rounded-2xl p-3.5 shadow-sm flex items-center gap-3 active:scale-98 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-xl flex-shrink-0">🏆</div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-gray-900">Челленджи недели</p>
+            <p className="text-xs text-gray-400">Посмотри свой прогресс</p>
+          </div>
+          <ChevronRight size={18} className="text-gray-300" />
+        </button>
+      </div>
+
       {/* AI Recommendation card */}
       {recommendation && !recDismissed && (
         <div className="mx-4 mt-3 bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl p-4 shadow-lg text-white relative">
@@ -788,12 +888,57 @@ export default function Home() {
       {/* Meals grouped by type */}
       <div className="mx-4 mt-4 pb-36">
         {meals.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">
-            <div className="text-4xl mb-2">📷</div>
-            <p>Сфотографируйте еду чтобы начать</p>
+          <div>
+            {/* Onboarding hints */}
+            {!hintsShown && <HintsCard onDismiss={dismissHints} />}
+            {/* Favorites quick-add */}
+            {favorites.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">⭐ Избранное</p>
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {favorites.map(fav => (
+                    <button key={fav.name} onClick={() => addFromFavorite(fav)}
+                      className="flex-shrink-0 bg-white rounded-2xl px-3 py-2 shadow-sm flex items-center gap-2 active:scale-95 transition-transform border border-gray-100">
+                      <span className="text-xl">{fav.emoji}</span>
+                      <div className="text-left">
+                        <p className="text-xs font-medium text-gray-900 whitespace-nowrap max-w-[80px] truncate">{fav.name}</p>
+                        <p className="text-xs text-gray-400">{fav.calories} ккал</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Empty state */}
+            <div className="text-center py-6 text-gray-400">
+              <div className="text-4xl mb-2">📷</div>
+              <p>Сфотографируй еду чтобы начать</p>
+              <button onClick={repeatYesterday}
+                className="mt-4 flex items-center gap-2 mx-auto bg-white border border-orange-300 text-orange-500 px-4 py-2 rounded-full text-sm font-medium shadow-sm active:scale-95 transition-transform">
+                🔄 Повторить как вчера
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Favorites quick-add (when meals exist) */}
+            {favorites.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">⭐ Избранное</p>
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {favorites.map(fav => (
+                    <button key={fav.name} onClick={() => addFromFavorite(fav)}
+                      className="flex-shrink-0 bg-white rounded-2xl px-3 py-2 shadow-sm flex items-center gap-2 active:scale-95 transition-transform border border-gray-100">
+                      <span className="text-xl">{fav.emoji}</span>
+                      <div className="text-left">
+                        <p className="text-xs font-medium text-gray-900 whitespace-nowrap max-w-[80px] truncate">{fav.name}</p>
+                        <p className="text-xs text-gray-400">{fav.calories} ккал</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {mealsByType.map(group => (
               <div key={group.key}>
                 <div className="flex items-center justify-between mb-2">
@@ -803,26 +948,34 @@ export default function Home() {
                   <span className="text-sm text-gray-400">{group.calories} ккал</span>
                 </div>
                 <div className="space-y-2">
-                  {group.meals.map(meal => (
-                    <div key={meal.id} className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm">
-                      <div className="text-3xl">{meal.emoji}</div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{meal.name}</p>
-                        <p className="text-gray-400 text-sm">
-                          {new Date(meal.eaten_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · Б:{meal.protein}г У:{meal.carbs}г Ж:{meal.fat}г
-                        </p>
-                      </div>
-                      <div className="text-right flex items-center gap-2">
-                        <div>
-                          <p className="font-bold text-gray-900">{meal.calories}</p>
-                          <p className="text-gray-400 text-xs">ккал</p>
+                  {group.meals.map(meal => {
+                    const isFav = !!favorites.find(f => f.name === meal.name)
+                    return (
+                      <div key={meal.id} className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+                        <div className="text-3xl">{meal.emoji}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900">{meal.name}</p>
+                          <p className="text-gray-400 text-sm">
+                            {new Date(meal.eaten_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · Б:{meal.protein}г У:{meal.carbs}г Ж:{meal.fat}г
+                          </p>
                         </div>
-                        <button onClick={() => deleteMeal(meal.id)} className="text-gray-300 hover:text-red-400 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="text-right flex items-center gap-2">
+                          <div>
+                            <p className="font-bold text-gray-900">{meal.calories}</p>
+                            <p className="text-gray-400 text-xs">ккал</p>
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <button onClick={() => toggleFavorite(meal)} className={`transition-colors ${isFav ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'}`}>
+                              <Star size={15} fill={isFav ? 'currentColor' : 'none'} />
+                            </button>
+                            <button onClick={() => deleteMeal(meal.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}
@@ -830,19 +983,27 @@ export default function Home() {
               <div>
                 <h2 className="text-gray-600 font-semibold mb-2">🍽️ Другое</h2>
                 <div className="space-y-2">
-                  {otherMeals.map(meal => (
-                    <div key={meal.id} className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm">
-                      <div className="text-3xl">{meal.emoji}</div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{meal.name}</p>
-                        <p className="text-gray-400 text-sm">Б:{meal.protein}г У:{meal.carbs}г Ж:{meal.fat}г</p>
+                  {otherMeals.map(meal => {
+                    const isFav = !!favorites.find(f => f.name === meal.name)
+                    return (
+                      <div key={meal.id} className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+                        <div className="text-3xl">{meal.emoji}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900">{meal.name}</p>
+                          <p className="text-gray-400 text-sm">Б:{meal.protein}г У:{meal.carbs}г Ж:{meal.fat}г</p>
+                        </div>
+                        <div className="text-right flex items-center gap-2">
+                          <div><p className="font-bold text-gray-900">{meal.calories}</p><p className="text-gray-400 text-xs">ккал</p></div>
+                          <div className="flex flex-col gap-1">
+                            <button onClick={() => toggleFavorite(meal)} className={`transition-colors ${isFav ? 'text-yellow-400' : 'text-gray-200 hover:text-yellow-300'}`}>
+                              <Star size={15} fill={isFav ? 'currentColor' : 'none'} />
+                            </button>
+                            <button onClick={() => deleteMeal(meal.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={15} /></button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-right flex items-center gap-2">
-                        <div><p className="font-bold text-gray-900">{meal.calories}</p><p className="text-gray-400 text-xs">ккал</p></div>
-                        <button onClick={() => deleteMeal(meal.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={16} /></button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}

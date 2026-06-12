@@ -11,25 +11,25 @@ export async function POST(req: NextRequest) {
   try {
     const { meals, dailyGoal, goal, totalCalories, totalProtein, totalCarbs, totalFat } = await req.json()
 
-    const prompt = `Пользователь заполнил дневник питания за сегодня. Дай 1-2 конкретных совета на вечер.
+    const remaining = dailyGoal - totalCalories
+    const proteinTarget = Math.round(dailyGoal * 0.3 / 4)
+    const carbTarget = Math.round(dailyGoal * 0.45 / 4)
+    const fatTarget = Math.round(dailyGoal * 0.25 / 9)
+    const proteinDiff = proteinTarget - totalProtein
+    const carbDiff = carbTarget - totalCarbs
+    const fatDiff = fatTarget - totalFat
 
-Данные:
-- Цель: ${goal === 'lose' ? 'похудеть' : goal === 'gain' ? 'набрать массу' : 'поддерживать вес'}
-- Норма калорий: ${dailyGoal} ккал
-- Съедено: ${totalCalories} ккал
-- Белки: ${totalProtein}г, Углеводы: ${totalCarbs}г, Жиры: ${totalFat}г
-- Блюда: ${meals.map((m: any) => m.name).join(', ') || 'ничего'}
+    const prompt = `Ты дружелюбный нутрициолог-помощник в фитнес-приложении. Дай персональный совет на вечер.
 
-Рекомендуемые нормы БЖУ: белки ~${Math.round(dailyGoal * 0.3 / 4)}г, углеводы ~${Math.round(dailyGoal * 0.45 / 4)}г, жиры ~${Math.round(dailyGoal * 0.25 / 9)}г.
+Цель пользователя: ${goal === 'lose' ? 'похудеть' : goal === 'gain' ? 'набрать мышечную массу' : 'поддерживать вес'}
+Калории: съедено ${totalCalories} из ${dailyGoal} ккал (${remaining > 0 ? `осталось ${remaining} ккал` : `превышение на ${-remaining} ккал`})
+БЖУ сегодня: Б ${totalProtein}г (норма ${proteinTarget}г, ${proteinDiff > 0 ? `не хватает ${proteinDiff}г` : 'норма выполнена'}), У ${totalCarbs}г (норма ${carbTarget}г), Ж ${totalFat}г (норма ${fatTarget}г)
+Блюда за день: ${meals.map((m: any) => m.name).join(', ') || 'ничего не записано'}
 
-Ответь в формате JSON:
-{
-  "emoji": "💪",
-  "title": "Короткий заголовок (5-7 слов)",
-  "tip": "Конкретный совет 1-2 предложения без markdown. Укажи конкретные продукты если нужно."
-}
+Задача: на основе РЕАЛЬНОГО состояния рациона дай 1 конкретный и полезный совет. Не общие слова — конкретно что съесть/сделать вечером, почему это важно для его цели.
 
-Только JSON, без лишнего текста.`
+Верни ТОЛЬКО JSON без markdown:
+{"emoji":"💪","title":"Заголовок 4-6 слов","tip":"Совет 1-2 предложения. Конкретные продукты, граммы, действия."}`
 
     const response = await mistral.chat.complete({
       model: 'mistral-small-latest',
