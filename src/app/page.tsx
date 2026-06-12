@@ -301,7 +301,7 @@ export default function Home() {
   }
 
   // Test accounts that always get full PRO access
-  const TEST_EMAILS = ['test@fitdiary.ru', 'admin@fitdiary.ru']
+  const TEST_EMAILS = ['test@fitdiary.ru', 'admin@fitdiary.ru', 's.vagit@gmail.com']
 
   const loadProfile = async (userId: string) => {
     const { data: { user: currentUser } } = await supabase.auth.getUser()
