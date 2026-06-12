@@ -300,9 +300,39 @@ export default function Home() {
     localStorage.setItem(`water_${today}`, String(newVal))
   }
 
+  // Test accounts that always get full PRO access
+  const TEST_EMAILS = ['test@fitdiary.ru', 'admin@fitdiary.ru']
+
   const loadProfile = async (userId: string) => {
+    const { data: { user: currentUser } } = await supabase.auth.getUser()
+    const isTestAccount = TEST_EMAILS.includes(currentUser?.email || '')
+
     const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
     if (!data || !data.gender) {
+      if (isTestAccount) {
+        // Auto-setup test profile without onboarding
+        await supabase.from('profiles').upsert({
+          id: userId,
+          name: 'Test User',
+          gender: 'male',
+          age: 30,
+          weight: 75,
+          height: 180,
+          goal: 'maintain',
+          activity: 'moderate',
+          daily_goal: 2500,
+          is_pro: true,
+          total_photos: 0,
+          streak: 0,
+        })
+        setDailyGoal(2500)
+        setIsPro(true)
+        setTotalPhotos(0)
+        setStreak(0)
+        setStartWeight(75)
+        setUserGoal('maintain')
+        return
+      }
       setShowOnboarding(true)
     } else {
       setDailyGoal(data.daily_goal || 2000)
@@ -313,8 +343,8 @@ export default function Home() {
       }
     }
     if (data) {
-      setIsPro(data.is_pro || false)
-      setTotalPhotos(data.total_photos || 0)
+      setIsPro(isTestAccount ? true : (data.is_pro || false))
+      setTotalPhotos(isTestAccount ? 0 : (data.total_photos || 0))
       setStreak(data.streak || 0)
       setStartWeight(data.weight || 70)
       setUserGoal(data.goal || 'maintain')
