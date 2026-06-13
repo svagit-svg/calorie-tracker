@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { Mistral } from '@mistralai/mistralai'
 import { requireAuth } from '../../supabase/server'
