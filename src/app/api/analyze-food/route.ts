@@ -5,7 +5,10 @@ import { Mistral } from '@mistralai/mistralai'
 import { requireAuth } from '../../supabase/server'
 
 export async function POST(req: NextRequest) {
-  const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY })
+  try {
+  const apiKey = process.env.MISTRAL_API_KEY
+  if (!apiKey) return NextResponse.json({ error: 'MISTRAL_API_KEY not set' }, { status: 500 })
+  const client = new Mistral({ apiKey })
   const user = await requireAuth(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -43,7 +46,10 @@ export async function POST(req: NextRequest) {
   const match = str.match(/\{[\s\S]*\}/)
   try {
     return NextResponse.json(JSON.parse(match?.[0] || str))
-  } catch {
+  } catch (parseErr) {
     return NextResponse.json({ error: 'Не удалось распознать еду' }, { status: 400 })
+  }
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
