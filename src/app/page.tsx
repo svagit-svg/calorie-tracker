@@ -65,16 +65,31 @@ const PLANS = [
   { key: 'year',  label: 'Год',     price: 1990, perDay: 5,   badge: 'Выгоднее на 33%' },
 ]
 
-function BottomNav({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
-  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: 'home',    label: 'Сегодня',    icon: <HomeIcon size={22} /> },
-    { key: 'stats',   label: 'Статистика', icon: <BarChart2 size={22} /> },
-    { key: 'weight',  label: 'Моё тело',   icon: <Scale size={22} /> },
-    { key: 'profile', label: 'Профиль',    icon: <User size={22} /> },
+function BottomNav({ active, onChange, onAdd }: { active: Tab; onChange: (t: Tab) => void; onAdd: () => void }) {
+  const left:  { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: 'home',  label: 'Сегодня',    icon: <HomeIcon size={22} /> },
+    { key: 'stats', label: 'Статистика', icon: <BarChart2 size={22} /> },
+  ]
+  const right: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: 'weight',  label: 'Моё тело', icon: <Scale size={22} /> },
+    { key: 'profile', label: 'Профиль',  icon: <User size={22} /> },
   ]
   return (
-    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 flex z-40">
-      {tabs.map(t => (
+    <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 flex items-end z-40">
+      {left.map(t => (
+        <button key={t.key} onClick={() => onChange(t.key)}
+          className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors ${active === t.key ? 'text-orange-500' : 'text-gray-400'}`}>
+          {t.icon}
+          <span className="text-xs font-medium">{t.label}</span>
+        </button>
+      ))}
+      <div className="flex-1 flex justify-center pb-1">
+        <button onClick={onAdd}
+          className="w-14 h-14 bg-orange-500 rounded-full flex items-center justify-center shadow-lg -mt-5 active:scale-95 transition-transform">
+          <Plus size={26} className="text-white" />
+        </button>
+      </div>
+      {right.map(t => (
         <button key={t.key} onClick={() => onChange(t.key)}
           className={`flex-1 flex flex-col items-center py-2.5 gap-0.5 transition-colors ${active === t.key ? 'text-orange-500' : 'text-gray-400'}`}>
           {t.icon}
@@ -262,6 +277,7 @@ export default function Home() {
   const [showChallenges, setShowChallenges] = useState(false)
   const [showBarcode, setShowBarcode] = useState(false)
   const [showMealPlanner, setShowMealPlanner] = useState(false)
+  const [showAddSheet, setShowAddSheet] = useState(false)
   const [userActivity, setUserActivity] = useState('moderate')
   const [proBannerDismissed, setProBannerDismissed] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -645,7 +661,7 @@ export default function Home() {
   if (showChallenges && user) return (
     <>
       <ChallengesScreen onBack={() => setShowChallenges(false)} userId={user.id} streak={streak} dailyGoal={dailyGoal} />
-      <BottomNav active={activeTab} onChange={setActiveTab} />
+      <BottomNav active={activeTab} onChange={setActiveTab} onAdd={() => setShowAddSheet(true)} />
     </>
   )
 
@@ -663,7 +679,7 @@ export default function Home() {
           if (newMeal) setMeals(prev => [...prev, newMeal])
         }}
       />
-      <BottomNav active={activeTab} onChange={setActiveTab} />
+      <BottomNav active={activeTab} onChange={setActiveTab} onAdd={() => setShowAddSheet(true)} />
     </>
   )
 
@@ -672,7 +688,7 @@ export default function Home() {
     <>
       <StatsScreen onBack={() => setActiveTab('home')} userId={user.id} dailyGoal={dailyGoal}
         userName={userName} streak={streak} />
-      <BottomNav active={activeTab} onChange={setActiveTab} />
+      <BottomNav active={activeTab} onChange={setActiveTab} onAdd={() => setShowAddSheet(true)} />
     </>
   )
 
@@ -681,7 +697,7 @@ export default function Home() {
       <WeightScreen onBack={() => setActiveTab('home')} userId={user.id} startWeight={startWeight}
         currentGoal={userGoal} onWeightUpdate={(w) => { setStartWeight(w); setProfileKey(k => k + 1) }}
         userName={userName} streak={streak} />
-      <BottomNav active={activeTab} onChange={setActiveTab} />
+      <BottomNav active={activeTab} onChange={setActiveTab} onAdd={() => setShowAddSheet(true)} />
     </>
   )
 
@@ -692,7 +708,7 @@ export default function Home() {
         onGoalUpdate={(goal) => { setDailyGoal(goal); setActiveTab('home') }}
         onShowPaywall={() => setShowPaywall(true)} />
       {showPaywall && <PaywallScreen onClose={() => setShowPaywall(false)} limitReason={totalPhotos >= 10 ? 'photos' : 'daily'} />}
-      <BottomNav active={activeTab} onChange={setActiveTab} />
+      <BottomNav active={activeTab} onChange={setActiveTab} onAdd={() => setShowAddSheet(true)} />
     </>
   )
 
@@ -1180,26 +1196,57 @@ export default function Home() {
 
       <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
 
-      {/* Floating action buttons — raised above bottom nav */}
-      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 flex gap-3">
-        <button onClick={openBarcode}
-          className="bg-white text-orange-500 border-2 border-orange-500 rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:scale-95 transition-transform relative">
-          <ScanBarcode size={22} />
-          {!isPro && <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">1</span>}
-        </button>
-        <button onClick={() => setShowFoodDB(true)}
-          className="bg-white text-orange-500 border-2 border-orange-500 rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:scale-95 transition-transform text-xl">
-          🍽️
-        </button>
-        <button onClick={() => { setManual({ name: '', calories: '', protein: '', carbs: '', fat: '', meal_type: detectMealType() }); setShowManual(true) }}
-          className="bg-white text-orange-500 border-2 border-orange-500 rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:scale-95 transition-transform">
-          <Plus size={24} />
-        </button>
-        <button onClick={() => fileInputRef.current?.click()} disabled={loading}
-          className="bg-orange-500 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-50">
-          {loading ? <Loader2 size={28} className="animate-spin" /> : <Camera size={28} />}
-        </button>
-      </div>
+      {/* Add meal bottom sheet */}
+      {showAddSheet && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowAddSheet(false)} />
+          <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white rounded-t-3xl z-50">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1" />
+            <p className="text-center text-sm font-medium text-gray-400 py-3">Добавить приём пищи</p>
+            <div className="grid grid-cols-2 gap-3 px-4 pb-10">
+              <button onClick={() => { setShowAddSheet(false); fileInputRef.current?.click() }} disabled={loading}
+                className="flex items-center gap-3 bg-orange-500 text-white rounded-2xl p-4 active:scale-95 transition-transform disabled:opacity-50">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                  {loading ? <Loader2 size={20} className="animate-spin" /> : <Camera size={20} />}
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold text-sm">Фото AI</div>
+                  <div className="text-xs opacity-75">Распознать блюдо</div>
+                </div>
+              </button>
+              <button onClick={() => { setShowAddSheet(false); openBarcode() }}
+                className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl p-4 active:scale-95 transition-transform relative">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+                  <ScanBarcode size={20} className="text-orange-500" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold text-sm text-gray-800">Штрихкод</div>
+                  <div className="text-xs text-gray-400">Сканировать</div>
+                </div>
+                {!isPro && <span className="absolute top-2 right-2 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">1</span>}
+              </button>
+              <button onClick={() => { setShowAddSheet(false); setShowFoodDB(true) }}
+                className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl p-4 active:scale-95 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">🍽️</div>
+                <div className="text-left">
+                  <div className="font-semibold text-sm text-gray-800">Из дневника</div>
+                  <div className="text-xs text-gray-400">Недавние блюда</div>
+                </div>
+              </button>
+              <button onClick={() => { setShowAddSheet(false); setManual({ name: '', calories: '', protein: '', carbs: '', fat: '', meal_type: detectMealType() }); setShowManual(true) }}
+                className="flex items-center gap-3 bg-orange-50 border border-orange-100 rounded-2xl p-4 active:scale-95 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+                  <Plus size={20} className="text-orange-500" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold text-sm text-gray-800">Вручную</div>
+                  <div className="text-xs text-gray-400">Найти или создать</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Barcode scanner overlay */}
       {showBarcode && <BarcodeScanner onResult={handleBarcodeResult} onClose={() => setShowBarcode(false)} />}
@@ -1208,7 +1255,7 @@ export default function Home() {
       {showPaywall && <PaywallScreen onClose={() => setShowPaywall(false)} limitReason={totalPhotos >= 10 ? 'photos' : 'daily'} />}
 
       {/* Bottom navigation */}
-      <BottomNav active={activeTab} onChange={setActiveTab} />
+      <BottomNav active={activeTab} onChange={setActiveTab} onAdd={() => setShowAddSheet(true)} />
     </main>
   )
 }
