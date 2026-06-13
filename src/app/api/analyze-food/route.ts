@@ -6,9 +6,7 @@ import { requireAuth } from '../../supabase/server'
 
 export async function POST(req: NextRequest) {
   try {
-  const apiKey = process.env.MISTRAL_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'MISTRAL_API_KEY not set' }, { status: 500 })
-  const client = new Mistral({ apiKey })
+  const client = new Mistral({ apiKey: process.env.MISTRAL_API_KEY })
   const user = await requireAuth(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
