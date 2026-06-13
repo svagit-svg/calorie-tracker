@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, LogOut, Lock, Mail, User } from 'lucide-react'
 import { createClient } from './supabase/client'
 
@@ -142,6 +142,7 @@ export default function ProfileScreen({ onBack, onSignOut, userId, userEmail, on
     goal: 'maintain', activity: 'medium', daily_goal: 2000
   })
   const [saved, setSaved] = useState(false)
+  const isLoaded = useRef(false)
   const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [passwordMsg, setPasswordMsg] = useState('')
@@ -156,14 +157,22 @@ export default function ProfileScreen({ onBack, onSignOut, userId, userEmail, on
         const oauthName = user?.user_metadata?.full_name || user?.user_metadata?.name || ''
         const name = data.name || oauthName
         setProfile(p => ({ ...p, ...data, name }))
-        // Сохраняем имя из OAuth если его не было
         if (!data.name && oauthName) {
           await supabase.from('profiles').update({ name: oauthName }).eq('id', userId)
         }
       }
+      setTimeout(() => { isLoaded.current = true }, 0)
     }
     loadProfile()
   }, [userId])
+
+  // Auto-save 1.5s after any profile change
+  useEffect(() => {
+    if (!isLoaded.current) return
+    const timer = setTimeout(() => save(), 1500)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile])
 
   const save = async () => {
     const goal = calcCalories(profile)
@@ -213,6 +222,7 @@ export default function ProfileScreen({ onBack, onSignOut, userId, userEmail, on
       <div className="bg-white px-4 pt-12 pb-4 shadow-sm flex items-center gap-3">
         <button onClick={onBack}><ChevronLeft size={24} className="text-gray-400" /></button>
         <h1 className="text-xl font-bold flex-1">Профиль</h1>
+        {saved && <span className="text-xs text-green-500 font-medium">✓ Сохранено</span>}
         <button onClick={onSignOut} className="text-gray-400"><LogOut size={20} /></button>
       </div>
 
@@ -295,14 +305,13 @@ export default function ProfileScreen({ onBack, onSignOut, userId, userEmail, on
                   className="w-8 h-8 rounded-full bg-gray-100 font-bold flex items-center justify-center">−</button>
                 <input
                   type="number"
-                  step="1"
-                  min={min}
-                  max={max}
+                  inputMode="numeric"
                   value={profile[key]}
                   onChange={e => {
                     const v = parseInt(e.target.value)
-                    if (!isNaN(v) && v >= min && v <= max) setProfile(p => ({ ...p, [key]: v }))
+                    if (!isNaN(v)) setProfile(p => ({ ...p, [key]: v }))
                   }}
+                  onBlur={() => setProfile(p => ({ ...p, [key]: Math.min(max, Math.max(min, p[key])) }))}
                   className="w-16 text-center font-bold border border-gray-200 rounded-xl py-1 outline-none focus:border-orange-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="text-gray-500 text-sm">{unit}</span>
@@ -320,14 +329,14 @@ export default function ProfileScreen({ onBack, onSignOut, userId, userEmail, on
                 className="w-8 h-8 rounded-full bg-gray-100 font-bold flex items-center justify-center">−</button>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.1"
-                min={30}
-                max={300}
                 value={profile.weight}
                 onChange={e => {
                   const v = parseFloat(e.target.value)
-                  if (!isNaN(v) && v >= 30 && v <= 300) setProfile(p => ({ ...p, weight: v }))
+                  if (!isNaN(v)) setProfile(p => ({ ...p, weight: v }))
                 }}
+                onBlur={() => setProfile(p => ({ ...p, weight: +Math.min(300, Math.max(30, p.weight)).toFixed(1) }))}
                 className="w-20 text-center font-bold border border-gray-200 rounded-xl py-1 outline-none focus:border-orange-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="text-gray-500 text-sm">кг</span>
@@ -389,13 +398,6 @@ export default function ProfileScreen({ onBack, onSignOut, userId, userEmail, on
         )}
       </div>
 
-      {/* Save button */}
-      <div className="mx-4 mt-4">
-        <button onClick={save}
-          className="w-full bg-orange-500 text-white rounded-2xl py-4 font-medium text-lg">
-          {saved ? '✓ Сохранено!' : 'Сохранить'}
-        </button>
-      </div>
     </div>
   )
 }
