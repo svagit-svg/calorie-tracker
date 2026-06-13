@@ -626,42 +626,21 @@ export default function FoodDBScreen({ onBack, onAdd }: Props) {
     }, 600)
   }, [search])
 
-  const handleBarcode = async (barcode: string) => {
+  const handleBarcodeResult = (result: { name: string; calories: number; protein: number; carbs: number; fat: number }) => {
     setShowScanner(false)
-    setBarcodeLoading(true)
-    setBarcodeError('')
-    try {
-      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
-      const data = await res.json()
-      if (data.status === 0 || !data.product) {
-        setBarcodeError('Продукт не найден в базе. Попробуйте ввести вручную.')
-        return
-      }
-      const p = data.product
-      const n = p.nutriments
-      const cal = Math.round(n['energy-kcal_100g'] || n['energy-kcal'] || 0)
-      if (!cal) {
-        setBarcodeError('Нет данных о калориях для этого продукта.')
-        return
-      }
-      const food: FoodItem = {
-        name: p.product_name_ru || p.product_name || 'Продукт',
-        emoji: getEmojiForFood(p.product_name_ru || p.product_name || ''),
-        cal100: cal,
-        protein: Math.round(n.proteins_100g || 0),
-        carbs: Math.round(n.carbohydrates_100g || 0),
-        fat: Math.round(n.fat_100g || 0),
-        portion: 100,
-        category: 'Из базы',
-        fromApi: true,
-      }
-      setSelected(food)
-      setGrams('100')
-    } catch {
-      setBarcodeError('Ошибка соединения. Проверьте интернет.')
-    } finally {
-      setBarcodeLoading(false)
+    const food: FoodItem = {
+      name: result.name,
+      emoji: getEmojiForFood(result.name),
+      cal100: result.calories,
+      protein: result.protein,
+      carbs: result.carbs,
+      fat: result.fat,
+      portion: 100,
+      category: 'Из базы',
+      fromApi: true,
     }
+    setSelected(food)
+    setGrams('100')
   }
 
   const handleSelect = (food: FoodItem) => {
@@ -829,7 +808,7 @@ export default function FoodDBScreen({ onBack, onAdd }: Props) {
       {/* Barcode scanner */}
       {showScanner && (
         <BarcodeScanner
-          onDetected={handleBarcode}
+          onResult={handleBarcodeResult}
           onClose={() => setShowScanner(false)}
         />
       )}

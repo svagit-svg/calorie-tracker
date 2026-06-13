@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Mic, MicOff, Home as HomeIcon, BarChart2, Scale, User, Star, ChevronRight } from 'lucide-react'
+import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Mic, MicOff, Home as HomeIcon, BarChart2, Scale, User, Star, ChevronRight, ScanBarcode, Sparkles } from 'lucide-react'
 import { createClient } from './supabase/client'
 import Onboarding from './onboarding'
 import ProfileScreen from './profile'
@@ -12,6 +12,8 @@ import WeightScreen from './weight'
 import ChatScreen from './chat'
 import FoodDBScreen from './fooddb'
 import ChallengesScreen from './challenges'
+import BarcodeScanner, { BarcodeResult } from './barcode-scanner'
+import MealPlannerScreen from './meal-planner'
 
 const MEAL_TYPES = [
   { key: 'breakfast', label: 'Завтрак', emoji: '🌅' },
@@ -223,6 +225,9 @@ export default function Home() {
   const [favorites, setFavorites] = useState<Omit<Meal, 'id' | 'eaten_at'>[]>([])
   const [hintsShown, setHintsShown] = useState(true)
   const [showChallenges, setShowChallenges] = useState(false)
+  const [showBarcode, setShowBarcode] = useState(false)
+  const [showMealPlanner, setShowMealPlanner] = useState(false)
+  const [userActivity, setUserActivity] = useState('moderate')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isListening, setIsListening] = useState(false)
   const [voicePending, setVoicePending] = useState<any[]>([])
@@ -288,6 +293,25 @@ export default function Home() {
     if (meal) setMeals(prev => [...prev, meal])
   }
 
+  const openBarcode = () => {
+    if (!isPro) {
+      const today = new Date().toISOString().split('T')[0]
+      const scans = Number(localStorage.getItem(`barcode_${today}`) || 0)
+      if (scans >= 1) { setShowPaywall(true); return }
+    }
+    setShowBarcode(true)
+  }
+
+  const handleBarcodeResult = (result: BarcodeResult) => {
+    setShowBarcode(false)
+    if (!isPro) {
+      const today = new Date().toISOString().split('T')[0]
+      const scans = Number(localStorage.getItem(`barcode_${today}`) || 0)
+      localStorage.setItem(`barcode_${today}`, String(scans + 1))
+    }
+    setPending({ ...result, meal_type: detectMealType() })
+  }
+
   const dismissHints = () => {
     localStorage.setItem('hints_done', '1')
     setHintsShown(true)
@@ -348,6 +372,7 @@ export default function Home() {
       setStreak(data.streak || 0)
       setStartWeight(data.weight || 70)
       setUserGoal(data.goal || 'maintain')
+      setUserActivity(data.activity || 'moderate')
     }
   }
 
@@ -642,6 +667,24 @@ export default function Home() {
     </>
   )
 
+  if (showMealPlanner && user) return (
+    <>
+      <MealPlannerScreen
+        onBack={() => setShowMealPlanner(false)}
+        dailyGoal={dailyGoal}
+        goal={userGoal}
+        activity={userActivity}
+        onAddMeal={async (meal) => {
+          const { data: newMeal } = await supabase.from('meals').insert({
+            user_id: user.id, ...meal,
+          }).select().single()
+          if (newMeal) setMeals(prev => [...prev, newMeal])
+        }}
+      />
+      <BottomNav active={activeTab} onChange={setActiveTab} />
+    </>
+  )
+
   // Tab screens
   if (activeTab === 'stats' && user) return (
     <>
@@ -835,6 +878,10 @@ export default function Home() {
         <div className="flex gap-3 pb-1">
           <button onClick={() => setShowAchievements(true)} className="flex items-center gap-1 text-orange-500">
             <span className="text-sm font-bold">{streak}</span><span>🔥</span>
+          </button>
+          <button onClick={() => isPro ? setShowMealPlanner(true) : setShowPaywall(true)}
+            className="flex items-center gap-1 bg-violet-500 text-white px-2.5 py-1.5 rounded-full text-xs font-semibold shadow-sm">
+            <Sparkles size={13} />Меню
           </button>
           <button onClick={() => setShowChat(true)}
             className="flex items-center gap-1 bg-orange-500 text-white px-2.5 py-1.5 rounded-full text-xs font-semibold shadow-sm">
@@ -1126,6 +1173,11 @@ export default function Home() {
 
       {/* Floating action buttons — raised above bottom nav */}
       <div className="fixed bottom-20 left-1/2 -translate-x-1/2 flex gap-3">
+        <button onClick={openBarcode}
+          className="bg-white text-orange-500 border-2 border-orange-500 rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:scale-95 transition-transform relative">
+          <ScanBarcode size={22} />
+          {!isPro && <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">1</span>}
+        </button>
         <button onClick={() => setShowFoodDB(true)}
           className="bg-white text-orange-500 border-2 border-orange-500 rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:scale-95 transition-transform text-xl">
           🍽️
@@ -1175,6 +1227,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Barcode scanner overlay */}
+      {showBarcode && <BarcodeScanner onResult={handleBarcodeResult} onClose={() => setShowBarcode(false)} />}
 
       {/* Paywall */}
       {showPaywall && <PaywallScreen onClose={() => setShowPaywall(false)} limitReason={totalPhotos >= 10 ? 'photos' : 'daily'} />}
