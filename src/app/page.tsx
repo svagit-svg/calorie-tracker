@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Home as HomeIcon, BarChart2, Scale, User, Star, ChevronRight, ScanBarcode, Sparkles } from 'lucide-react'
