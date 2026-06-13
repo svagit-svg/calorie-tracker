@@ -4,9 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Mistral } from '@mistralai/mistralai'
 import { requireAuth } from '../../supabase/server'
 
-const mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY! })
+
 
 export async function POST(req: NextRequest) {
+  const mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY! })
   const user = await requireAuth(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
