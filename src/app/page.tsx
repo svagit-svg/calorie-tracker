@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Mic, MicOff, Home as HomeIcon, BarChart2, Scale, User, Star, ChevronRight, ScanBarcode, Sparkles } from 'lucide-react'
+import { Camera, Beef, Wheat, Droplets, Loader2, LogOut, Trash2, Plus, X, Home as HomeIcon, BarChart2, Scale, User, Star, ChevronRight, ScanBarcode, Sparkles } from 'lucide-react'
 import { createClient } from './supabase/client'
 import Onboarding from './onboarding'
 import ProfileScreen from './profile'
@@ -263,9 +263,6 @@ export default function Home() {
   const [userActivity, setUserActivity] = useState('moderate')
   const [proBannerDismissed, setProBannerDismissed] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isListening, setIsListening] = useState(false)
-  const [voicePending, setVoicePending] = useState<any[]>([])
-  const recognitionRef = useRef<any>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -456,63 +453,6 @@ export default function Home() {
       options: { redirectTo: `https://fitdiary-app.netlify.app/api/auth/callback` },
     })
     if (error) setAuthError('Ошибка входа через ' + (provider === 'google' ? 'Google' : 'ВКонтакте'))
-  }
-
-  const startVoice = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) { alert('Голосовой ввод не поддерживается в этом браузере'); return }
-    const recognition = new SpeechRecognition()
-    recognition.lang = 'ru-RU'
-    recognition.interimResults = false
-    recognition.maxAlternatives = 1
-    recognitionRef.current = recognition
-    recognition.onstart = () => setIsListening(true)
-    recognition.onend = () => setIsListening(false)
-    recognition.onerror = () => setIsListening(false)
-    recognition.onresult = async (event: any) => {
-      const transcript = event.results[0][0].transcript
-      setLoading(true)
-      try {
-        const res = await fetch('/api/analyze-voice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: transcript }),
-        })
-        const data = await res.json()
-        if (data.dishes?.length > 0) {
-          setVoicePending(data.dishes.map((d: any) => ({ ...d, confirmed: true })))
-        } else {
-          alert('Не удалось распознать блюда. Попробуйте ещё раз.')
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-    recognition.start()
-  }
-
-  const stopVoice = () => {
-    recognitionRef.current?.stop()
-    setIsListening(false)
-  }
-
-  const confirmVoiceMeals = async () => {
-    if (!user) return
-    const confirmed = voicePending.filter(d => d.confirmed)
-    for (const dish of confirmed) {
-      const { data: meal } = await supabase.from('meals').insert({
-        user_id: user.id,
-        name: dish.name,
-        calories: dish.calories,
-        protein: dish.protein,
-        carbs: dish.carbs,
-        fat: dish.fat,
-        emoji: dish.emoji || '🍽️',
-        meal_type: detectMealType(),
-      }).select().single()
-      if (meal) setMeals(prev => [...prev, meal])
-    }
-    setVoicePending([])
   }
 
   const handleSignOut = async () => { await supabase.auth.signOut() }
@@ -827,7 +767,6 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-3">
           {[
             { emoji: '📸', title: 'Фото еды', desc: 'AI считает калории по фото' },
-            { emoji: '🎤', title: 'Голосовой ввод', desc: 'Добавляй еду голосом' },
             { emoji: '🔍', title: 'Штрихкоды', desc: 'Сканируй упаковки' },
             { emoji: '📖', title: 'База блюд', desc: '400+ русских блюд' },
             { emoji: '⚖️', title: 'Трекер веса', desc: 'Динамика и ИМТ' },
@@ -1254,47 +1193,11 @@ export default function Home() {
           className="bg-white text-orange-500 border-2 border-orange-500 rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:scale-95 transition-transform">
           <Plus size={24} />
         </button>
-        <button onClick={isListening ? stopVoice : startVoice} disabled={loading}
-          className={`rounded-full w-14 h-14 flex items-center justify-center shadow-xl active:scale-95 transition-all disabled:opacity-50 ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-white text-orange-500 border-2 border-orange-500'}`}>
-          {isListening ? <MicOff size={22} /> : <Mic size={22} />}
-        </button>
         <button onClick={() => fileInputRef.current?.click()} disabled={loading}
           className="bg-orange-500 text-white rounded-full w-16 h-16 flex items-center justify-center shadow-2xl active:scale-95 transition-transform disabled:opacity-50">
           {loading ? <Loader2 size={28} className="animate-spin" /> : <Camera size={28} />}
         </button>
       </div>
-
-      {/* Voice confirmation modal */}
-      {voicePending.length > 0 && (
-        <div className="fixed inset-0 bg-black/50 flex items-end z-50">
-          <div className="bg-white w-full max-w-md mx-auto rounded-t-3xl p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">Распознанные блюда</h3>
-              <button onClick={() => setVoicePending([])}><X size={24} className="text-gray-400" /></button>
-            </div>
-            <div className="space-y-2 mb-5">
-              {voicePending.map((dish, i) => (
-                <div key={i} className={`flex items-center gap-3 p-3 rounded-2xl border-2 cursor-pointer transition-all ${dish.confirmed ? 'border-orange-400 bg-orange-50' : 'border-gray-200'}`}
-                  onClick={() => setVoicePending(prev => prev.map((d, j) => j === i ? { ...d, confirmed: !d.confirmed } : d))}>
-                  <span className="text-2xl">{dish.emoji}</span>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{dish.name}</p>
-                    <p className="text-xs text-gray-400">{dish.grams}г · Б:{dish.protein}г У:{dish.carbs}г Ж:{dish.fat}г</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-gray-900">{dish.calories}</p>
-                    <p className="text-xs text-gray-400">ккал</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 text-center mb-3">Нажмите на блюдо чтобы убрать его</p>
-            <button onClick={confirmVoiceMeals} className="w-full bg-orange-500 text-white rounded-xl py-3 font-medium">
-              Добавить {voicePending.filter(d => d.confirmed).length} блюда
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Barcode scanner overlay */}
       {showBarcode && <BarcodeScanner onResult={handleBarcodeResult} onClose={() => setShowBarcode(false)} />}
