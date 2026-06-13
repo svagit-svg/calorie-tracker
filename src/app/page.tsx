@@ -141,33 +141,58 @@ function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitRea
   const [selected, setSelected] = useState('month')
   const plan = PLANS.find(p => p.key === selected)!
 
+  const painMessage = limitReason === 'photos'
+    ? 'Ты уже отследил 10 блюд с AI — это работает!'
+    : 'Бесплатно доступно только 1 фото в день'
+
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-end z-50">
-      <div className="bg-white w-full max-w-md mx-auto rounded-t-3xl overflow-hidden">
-        <div className="bg-gradient-to-br from-orange-400 to-orange-600 px-6 pt-8 pb-6 text-white text-center">
-          <div className="text-5xl mb-3">🚀</div>
-          <h2 className="text-2xl font-bold mb-1">Перейти на PRO</h2>
-          <p className="text-orange-100 text-sm">
-            {limitReason === 'photos' ? 'Вы использовали все 10 бесплатных распознаваний' : 'Бесплатно — 1 фото в день'}
-          </p>
-        </div>
-        <div className="px-6 pt-5 pb-6">
-          <div className="grid grid-cols-2 gap-2 mb-5">
-            {[
-              ['📷', 'Безлимитные фото'],
-              ['🤖', 'AI чат без ограничений'],
-              ['📊', 'Расширенная статистика'],
-              ['📤', 'Поделиться итогами'],
-              ['🍽️', 'Анализ рациона'],
-              ['⚡', 'Ранний доступ к функциям'],
-            ].map(([icon, text]) => (
-              <div key={text} className="flex items-center gap-2 bg-orange-50 rounded-xl px-3 py-2">
-                <span>{icon}</span>
-                <span className="text-xs text-gray-700 font-medium">{text}</span>
-              </div>
-            ))}
+    <div className="fixed inset-0 bg-black/70 flex items-end z-50" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white w-full max-w-md mx-auto rounded-t-3xl overflow-hidden max-h-[92vh] overflow-y-auto">
+        {/* Hero */}
+        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 px-6 pt-7 pb-6 text-white text-center relative">
+          <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-white text-2xl leading-none">×</button>
+          <div className="inline-flex items-center gap-1.5 bg-orange-500 rounded-full px-3 py-1 text-xs font-bold mb-3">
+            👑 FitDiary PRO
           </div>
-          <div className="flex gap-2 mb-5">
+          <h2 className="text-2xl font-bold mb-1.5">Убери все ограничения</h2>
+          <p className="text-gray-400 text-sm">{painMessage}</p>
+        </div>
+
+        <div className="px-5 pt-5 pb-6">
+          {/* Free vs PRO comparison */}
+          <div className="grid grid-cols-2 gap-2 mb-5">
+            <div className="bg-gray-50 rounded-2xl p-3">
+              <p className="text-xs font-bold text-gray-400 mb-2">Бесплатно</p>
+              {[
+                '1 фото в день',
+                '1 скан штрихкода в день',
+                'AI чат ограничен',
+                'Нет меню на неделю',
+              ].map(t => (
+                <div key={t} className="flex items-center gap-1.5 py-1">
+                  <span className="text-red-400 text-xs">✕</span>
+                  <span className="text-xs text-gray-500">{t}</span>
+                </div>
+              ))}
+            </div>
+            <div className="bg-orange-50 rounded-2xl p-3 border-2 border-orange-400">
+              <p className="text-xs font-bold text-orange-500 mb-2">PRO ✨</p>
+              {[
+                'Безлимитные фото',
+                'Безлимитный сканер',
+                'AI чат без ограничений',
+                'Меню на неделю от AI',
+              ].map(t => (
+                <div key={t} className="flex items-center gap-1.5 py-1">
+                  <span className="text-green-500 text-xs">✓</span>
+                  <span className="text-xs text-gray-700 font-medium">{t}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Plans */}
+          <div className="flex gap-2 mb-4">
             {PLANS.map(p => (
               <button key={p.key} onClick={() => setSelected(p.key)}
                 className={`flex-1 rounded-2xl border-2 p-3 text-center transition-all relative ${selected === p.key ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
@@ -176,17 +201,23 @@ function PaywallScreen({ onClose, limitReason }: { onClose: () => void; limitRea
                     {p.badge}
                   </div>
                 )}
-                <p className={`text-xs mb-1 ${selected === p.key ? 'text-orange-500 font-semibold' : 'text-gray-400'}`}>{p.label}</p>
+                <p className={`text-xs mb-0.5 ${selected === p.key ? 'text-orange-500 font-semibold' : 'text-gray-400'}`}>{p.label}</p>
                 <p className={`text-xl font-bold ${selected === p.key ? 'text-gray-900' : 'text-gray-600'}`}>{p.price} ₽</p>
                 <p className="text-xs text-gray-400">{p.perDay} ₽/день</p>
               </button>
             ))}
           </div>
-          <button className="w-full bg-orange-500 text-white rounded-2xl py-4 font-bold text-lg shadow-lg shadow-orange-200 mb-3">
-            Оформить за {plan.price} ₽ · {plan.label.toLowerCase()}
+
+          <button className="w-full bg-orange-500 text-white rounded-2xl py-4 font-bold text-lg shadow-lg shadow-orange-200 mb-3 active:scale-98 transition-transform">
+            Попробовать PRO за {plan.price} ₽
           </button>
-          <button onClick={onClose} className="w-full text-gray-400 py-2 text-sm">Не сейчас</button>
-          <p className="text-center text-xs text-gray-300 mt-2">Отменить можно в любой момент</p>
+
+          <div className="flex items-center justify-center gap-4 text-xs text-gray-400 mb-3">
+            <span>🔒 Безопасная оплата</span>
+            <span>·</span>
+            <span>↩ Отмена в любой момент</span>
+          </div>
+          <button onClick={onClose} className="w-full text-gray-400 py-1.5 text-sm">Продолжить бесплатно</button>
         </div>
       </div>
     </div>
@@ -879,21 +910,19 @@ export default function Home() {
             <p className="text-gray-400 text-sm capitalize flex-1 text-center">{dateLabel}</p>
             <button onClick={goToNextDay} className={`p-1 ${isToday ? 'text-gray-200' : 'text-gray-400'}`}>›</button>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{isToday ? 'Сегодня' : 'Дневник'}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900">{isToday ? 'Сегодня' : 'Дневник'}</h1>
+            <span className="text-xs bg-orange-100 text-orange-500 font-semibold px-2 py-0.5 rounded-full">Beta</span>
+          </div>
         </div>
-        <div className="flex gap-3 pb-1">
+        <div className="flex gap-2.5 pb-1">
           <button onClick={() => setShowAchievements(true)} className="flex items-center gap-1 text-orange-500">
             <span className="text-sm font-bold">{streak}</span><span>🔥</span>
-          </button>
-          <button onClick={() => isPro ? setShowMealPlanner(true) : setShowPaywall(true)}
-            className="flex items-center gap-1 bg-violet-500 text-white px-2.5 py-1.5 rounded-full text-xs font-semibold shadow-sm">
-            <Sparkles size={13} />Меню
           </button>
           <button onClick={() => setShowChat(true)}
             className="flex items-center gap-1 bg-orange-500 text-white px-2.5 py-1.5 rounded-full text-xs font-semibold shadow-sm">
             🥗 AI
           </button>
-          <button onClick={handleSignOut} className="text-gray-400"><LogOut size={20} /></button>
         </div>
       </div>
 
@@ -941,18 +970,40 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Weekly Challenges teaser */}
-      <div className="mx-4 mt-3">
+      {/* Weekly Challenges teaser + PRO features row */}
+      <div className="mx-4 mt-3 flex gap-2">
         <button onClick={() => setShowChallenges(true)}
-          className="w-full bg-white rounded-2xl p-3.5 shadow-sm flex items-center gap-3 active:scale-98 transition-transform">
-          <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-xl flex-shrink-0">🏆</div>
-          <div className="flex-1 text-left">
-            <p className="text-sm font-semibold text-gray-900">Челленджи недели</p>
-            <p className="text-xs text-gray-400">Посмотри свой прогресс</p>
+          className="flex-1 bg-white rounded-2xl p-3.5 shadow-sm flex items-center gap-2.5 active:scale-98 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-lg flex-shrink-0">🏆</div>
+          <div className="flex-1 text-left min-w-0">
+            <p className="text-xs font-semibold text-gray-900">Челленджи</p>
+            <p className="text-xs text-gray-400">Мой прогресс</p>
           </div>
-          <ChevronRight size={18} className="text-gray-300" />
+        </button>
+        <button onClick={() => isPro ? setShowMealPlanner(true) : setShowPaywall(true)}
+          className="flex-1 bg-white rounded-2xl p-3.5 shadow-sm flex items-center gap-2.5 active:scale-98 transition-transform relative overflow-hidden">
+          {!isPro && <div className="absolute top-1.5 right-1.5 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">PRO</div>}
+          <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center text-lg flex-shrink-0">✨</div>
+          <div className="flex-1 text-left min-w-0">
+            <p className="text-xs font-semibold text-gray-900">AI Меню</p>
+            <p className="text-xs text-gray-400">На неделю</p>
+          </div>
         </button>
       </div>
+
+      {/* PRO upsell banner for free users (shown once per day) */}
+      {!isPro && meals.length >= 2 && (
+        <div className="mx-4 mt-3 bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-sm font-bold">🚀 Убери ограничения</p>
+            <p className="text-gray-400 text-xs mt-0.5">Безлимитные фото · AI меню · от 14 ₽/день</p>
+          </div>
+          <button onClick={() => setShowPaywall(true)}
+            className="bg-orange-500 text-white px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap active:scale-95 transition-transform flex-shrink-0">
+            Попробовать
+          </button>
+        </div>
+      )}
 
       {/* AI Recommendation card */}
       {recommendation && !recDismissed && (
