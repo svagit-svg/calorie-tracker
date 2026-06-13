@@ -250,15 +250,19 @@ export default function Home() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // Load water, favorites and hints from localStorage
+  // Load favorites and hints once on mount
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0]
-    const saved = localStorage.getItem(`water_${today}`)
-    setWater(Number(saved) || 0)
     const favs = JSON.parse(localStorage.getItem('favorites') || '[]')
     setFavorites(favs)
     setHintsShown(!!localStorage.getItem('hints_done'))
   }, [])
+
+  // Load water for the selected date
+  useEffect(() => {
+    const dateStr = selectedDate.toISOString().split('T')[0]
+    const saved = localStorage.getItem(`water_${dateStr}`)
+    setWater(Number(saved) || 0)
+  }, [selectedDate])
 
   const repeatYesterday = async () => {
     if (!user) return
@@ -320,10 +324,10 @@ export default function Home() {
   }
 
   const toggleWater = (n: number) => {
-    const today = new Date().toISOString().split('T')[0]
+    const dateStr = selectedDate.toISOString().split('T')[0]
     const newVal = water >= n ? n - 1 : n
     setWater(newVal)
-    localStorage.setItem(`water_${today}`, String(newVal))
+    localStorage.setItem(`water_${dateStr}`, String(newVal))
   }
 
   // Test accounts that always get full PRO access
