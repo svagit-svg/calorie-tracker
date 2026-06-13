@@ -12,7 +12,9 @@ import WeightScreen from './weight'
 import ChatScreen from './chat'
 import FoodDBScreen from './fooddb'
 import ChallengesScreen from './challenges'
-import BarcodeScanner, { BarcodeResult } from './barcode-scanner'
+import dynamic from 'next/dynamic'
+import type { BarcodeResult } from './barcode-scanner'
+const BarcodeScanner = dynamic(() => import('./barcode-scanner'), { ssr: false })
 import MealPlannerScreen from './meal-planner'
 
 const MEAL_TYPES = [
