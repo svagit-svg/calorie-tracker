@@ -261,6 +261,7 @@ export default function Home() {
   const [showBarcode, setShowBarcode] = useState(false)
   const [showMealPlanner, setShowMealPlanner] = useState(false)
   const [userActivity, setUserActivity] = useState('moderate')
+  const [proBannerDismissed, setProBannerDismissed] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isListening, setIsListening] = useState(false)
   const [voicePending, setVoicePending] = useState<any[]>([])
@@ -286,6 +287,8 @@ export default function Home() {
     const favs = JSON.parse(localStorage.getItem('favorites') || '[]')
     setFavorites(favs)
     setHintsShown(!!localStorage.getItem('hints_done'))
+    const today = new Date().toISOString().split('T')[0]
+    setProBannerDismissed(localStorage.getItem('pro_banner_dismissed') === today)
   }, [])
 
   // Load water for the selected date
@@ -991,9 +994,9 @@ export default function Home() {
         </button>
       </div>
 
-      {/* PRO upsell banner for free users (shown once per day) */}
-      {!isPro && meals.length >= 2 && (
-        <div className="mx-4 mt-3 bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 flex items-center gap-3">
+      {/* PRO upsell banner for free users (shown once per day, dismissible) */}
+      {!isPro && meals.length >= 2 && !proBannerDismissed && (
+        <div className="mx-4 mt-3 bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-4 flex items-center gap-3 relative">
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-bold">🚀 Убери ограничения</p>
             <p className="text-gray-400 text-xs mt-0.5">Безлимитные фото · AI меню · от 14 ₽/день</p>
@@ -1002,6 +1005,14 @@ export default function Home() {
             className="bg-orange-500 text-white px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap active:scale-95 transition-transform flex-shrink-0">
             Попробовать
           </button>
+          <button
+            onClick={() => {
+              setProBannerDismissed(true)
+              localStorage.setItem('pro_banner_dismissed', new Date().toISOString().split('T')[0])
+            }}
+            className="absolute top-2 right-2 text-gray-600 hover:text-gray-400 p-0.5 leading-none text-base"
+            aria-label="Закрыть"
+          >×</button>
         </div>
       )}
 
